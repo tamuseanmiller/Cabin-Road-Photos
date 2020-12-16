@@ -6,20 +6,18 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.types.proto.Album;
-import com.stfalcon.imageviewer.StfalconImageViewer;
-import com.yanzhenjie.album.AlbumConfig;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
@@ -44,18 +42,31 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         View mView = inflater.inflate(R.layout.fragment_album, container, false);
 
         Thread thread = new Thread(() -> {
+            SwipeRefreshLayout refreshAlbum = mView.findViewById(R.id.refresh_album);
+            requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(true));
+
             // Fetch albums
-            List<Album> albums = photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList();
-            RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums);
+            AtomicReference<List<Album>> albums = new AtomicReference<>(photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList());
+            RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
             RecyclerView albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);
-            ColumnProvider col = () -> 5;
+            ColumnProvider col = () -> 7;
 
             // Initialize Recylerview
             requireActivity().runOnUiThread(() -> {
-                albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), 5));
+                albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), 7));
                 albumRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
                 albumRecycler.setAdapter(albumAdapter);
+
+                // Swipe Refresh
+                refreshAlbum.setNestedScrollingEnabled(true);
+                refreshAlbum.setRefreshing(false);
+            });
+
+            refreshAlbum.setOnRefreshListener(() -> {
+                albums.set(photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList());
+                albumAdapter.notifyDataSetChanged();
+                requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
             });
         });
         thread.start();

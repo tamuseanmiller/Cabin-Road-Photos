@@ -5,21 +5,28 @@
     android:layout_height="match_parent"
     tools:context=".GalleryFragment">
 
-    <androidx.recyclerview.widget.RecyclerView
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_width="wrap_content"
-        android:id="@+id/gallery_recycler"
-        android:layout_centerHorizontal="true" />
+        android:id="@+id/refresh_gallery">
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/start_slideshow_button"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:text="@string/start_slideshow"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/green_accent"
-        android:layout_margin="@dimen/fab_margin" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:id="@+id/gallery_recycler"
+            android:layout_centerHorizontal="true" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/start_slideshow_button"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:text="@string/start_slideshow"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/green_accent"
+            android:layout_margin="@dimen/fab_margin" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </RelativeLayout>

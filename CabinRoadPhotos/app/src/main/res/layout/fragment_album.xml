@@ -6,21 +6,28 @@
     android:background="@color/white"
     tools:context=".AlbumFragment">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:layout_width="wrap_content"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/album_recycler"/>
+        android:id="@+id/refresh_album">
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/create_album_button"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:text="@string/create_album"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/green_accent"
-        android:layout_margin="@dimen/fab_margin" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/album_recycler"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerHorizontal="true" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/create_album_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="@dimen/fab_margin"
+            android:backgroundTint="@color/green_accent"
+            android:text="@string/create_album"
+            android:textColor="@color/white" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </RelativeLayout>
