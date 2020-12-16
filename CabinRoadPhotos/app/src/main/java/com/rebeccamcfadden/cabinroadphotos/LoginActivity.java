@@ -26,9 +26,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private static final int RC_SIGN_IN = 1;
     private GoogleSignInClient mGoogleSignInClient;
-    public static FirebaseAuth mAuth;
-    public static GoogleSignInAccount account;
-    public static String idToken;
+    private GoogleSignInAccount account;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +51,6 @@ public class LoginActivity extends AppCompatActivity {
 //            Don't reach this page
 
         }
-        mAuth = FirebaseAuth.getInstance();
 
         // On Click Listener for login
         SignInButton signInButton = findViewById(R.id.sign_in_button);
@@ -106,11 +103,15 @@ public class LoginActivity extends AppCompatActivity {
                         assert mUser != null;
                         mUser.getIdToken(true)
                                 .addOnCompleteListener(task2 -> {
+
+                                    // Sign in completes, create intent
                                     if (task2.isSuccessful()) {
                                         Intent intent = new Intent(this, MainActivity.class);
+
+                                        // Add idToken to intent then start
+                                        intent.putExtra("idToken", Objects.requireNonNull(task2.getResult()).getToken());
                                         startActivity(intent);
                                         finish();
-                                        setIdToken(Objects.requireNonNull(task2.getResult()).getToken());
                                     }
                                 });
 
@@ -125,21 +126,5 @@ public class LoginActivity extends AppCompatActivity {
                     }
 
                 });
-    }
-
-    public static FirebaseAuth getmAuth() {
-        return mAuth;
-    }
-
-    public static GoogleSignInAccount getAccount() {
-        return account;
-    }
-
-    public static String getIdToken() {
-        return idToken;
-    }
-
-    public static void setIdToken(String idToken) {
-        LoginActivity.idToken = idToken;
     }
 }

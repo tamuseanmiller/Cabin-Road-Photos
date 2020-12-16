@@ -1,10 +1,14 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
@@ -34,9 +38,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static String accessToken;
-    private static PhotosLibraryClient photosLibraryClient;
+    private String accessToken;
+    private PhotosLibraryClient photosLibraryClient;
     private Thread t1;
+    private String idToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,74 +50,23 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Intent intent = getIntent();
+        idToken = intent.getStringExtra("idToken");
+
         getAccessToken();
-
-        AtomicReference<StfalconImageViewer> stfalconImageViewer = new AtomicReference<>(null);
-
-        Thread t2 = null;
 
         // Photos access thread
         t1 = new Thread(() -> {
 
-
             getPhotosLibrary();
-//            Arrays.asList(photosLibraryClient.listMediaItems().getPage().getResponse().getMediaItems(0).getProductUrl().trim());
-            ArrayList<String> images = new ArrayList<>();
-            ArrayList<AlbumFile> albums = new ArrayList<>();
-            for (MediaItem image : photosLibraryClient.listMediaItems().getPage().getResponse().getMediaItemsList()) {
-                images.add(image.getBaseUrl().trim());
-                AlbumFile af = new AlbumFile();
-                af.setPath(image.getBaseUrl().trim());
-                albums.add(af);
-            }
 
-            Album.initialize(AlbumConfig.newBuilder(this)
-                    .setAlbumLoader(new MediaLoader())
-                    .build());
-
-            MaterialButton gallery = findViewById(R.id.gallery_button);
-            gallery.setOnClickListener(v -> {
-
-                runOnUiThread(() -> {
-
-                    Album.image(this)
-                            .singleChoice() // Multi-Mode, Single-Mode: singleChoice().
-                            .columnCount(4) // The number of columns in the page list.
-                            .onResult(result -> {
-                                ArrayList<String> results = new ArrayList<>();
-
-                                // Add images before and after selected image
-                                results.add(result.get(0).getPath());
-                                results.addAll(images);
-                                stfalconImageViewer.set(new StfalconImageViewer.Builder<>(this, results, (imageView, image) -> {
-                                    Glide.with(this).load(image).into(imageView);
-                                }).show());
-
-                            })
-                            .onCancel(result -> {
-                                // The user canceled the operation.
-                            })
-                            .start();
-                });
-            });
+            Fragment albumFragment = new AlbumFragment(photosLibraryClient);
+            FragmentManager transaction = getSupportFragmentManager();
+            transaction.beginTransaction()
+                    .replace(R.id.main_layout, albumFragment) //<---replace a view in your layout (id: container) with the newFragment
+                    .addToBackStack(null)
+                    .commit();
         });
-
-        t2 = new Thread(() -> {
-            int cnt = 0;
-            while (true) {
-                if (stfalconImageViewer.get() != null) {
-                    int finalCnt = cnt;
-                    runOnUiThread(() -> stfalconImageViewer.get().setCurrentPosition(finalCnt));
-                    cnt++;
-                }
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        t2.start();
 
     }
 
@@ -152,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 .add("client_secret", Properties.getWebSecretKey())
                 .add("redirect_uri", "")
                 .add("code", new SharedPreferencesManager(getApplicationContext()).retrieveString("code", "NULL") /*LoginActivity.getAccount().getServerAuthCode()*/) // device code.
-                .add("id_token", LoginActivity.getIdToken()) // This is what we received in Step 5, the jwt token.
+                .add("id_token", idToken) // This is what we received in Step 5, the jwt token.
                 .build();
 
         final Request request = new Request.Builder()

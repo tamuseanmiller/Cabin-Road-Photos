@@ -4,7 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    android:id="@+id/main_layout"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin">
 
 <!--    <TextView-->
 <!--        android:layout_width="wrap_content"-->
@@ -14,11 +18,11 @@
 
 <!--    </TextView>-->
 
-    <com.google.android.material.button.MaterialButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/gallery_button"
-        android:text="gallery"
-        android:layout_centerInParent="true"/>
+<!--    <com.google.android.material.button.MaterialButton-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:id="@+id/gallery_button"-->
+<!--        android:text="gallery"-->
+<!--        android:layout_centerInParent="true"/>-->
 
 </RelativeLayout>
