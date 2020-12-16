@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -15,6 +16,9 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.types.proto.MediaItem;
 import com.stfalcon.imageviewer.StfalconImageViewer;
+import com.veinhorn.scrollgalleryview.MediaInfo;
+import com.veinhorn.scrollgalleryview.ScrollGalleryView;
+import com.veinhorn.scrollgalleryview.builder.GallerySettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +26,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
+import ogbe.ozioma.com.glideimageloader.dsl.DSL;
+
+import static ogbe.ozioma.com.glideimageloader.dsl.DSL.image;
 
 public class GalleryFragment extends Fragment {
 
@@ -30,7 +37,6 @@ public class GalleryFragment extends Fragment {
     private StfalconImageViewer stfalconImageViewer;
 
     public GalleryFragment() {
-
         albumIndex = 0;
         photosLibraryClient = null;
     }
@@ -63,7 +69,14 @@ public class GalleryFragment extends Fragment {
             // Get Media Items from Album and add to String List
             AtomicReference<List<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).getPage().getResponse().getMediaItemsList());
             AtomicReference<List<String>> finalImages = new AtomicReference<>(new ArrayList<>());
+            AtomicReference<List<String>> videos = new AtomicReference<>(new ArrayList<>());
+            AtomicReference<List<String>> notVideos = new AtomicReference<>(new ArrayList<>());
             for (MediaItem i : images.get()) {
+                if (i.getMediaMetadata().hasVideo()) {
+                    videos.get().add(i.getBaseUrl());
+                } else {
+                    notVideos.get().add(i.getBaseUrl());
+                }
                 finalImages.get().add(i.getBaseUrl());
             }
 
@@ -81,6 +94,31 @@ public class GalleryFragment extends Fragment {
             ExtendedFloatingActionButton startSlideshowButton = mView.findViewById(R.id.start_slideshow_button);
             requireActivity().runOnUiThread(() -> {
                 startSlideshowButton.setOnClickListener(v -> {
+
+                    /*ScrollGalleryView scrollGalleryView = mView.findViewById(R.id.scroll_gallery_view);
+                    scrollGalleryView.setVisibility(View.VISIBLE);
+
+                    hideSystemUI();
+
+                    scrollGalleryView
+                            .setThumbnailSize(200)
+                            .setZoom(true)
+                            .withHiddenThumbnails(true);
+
+                    ScrollGalleryView
+                            .from(scrollGalleryView)
+                            .settings(
+                                    GallerySettings
+                                            .from(getActivity().getSupportFragmentManager())
+                                            .thumbnailSize(10)
+                                            .enableZoom(true)
+                                            .build()
+                            )
+                            .add(DSL.video(videos.get().get(0), R.drawable.placeholder_image))
+                            .add(DSL.images(notVideos.get()))
+                            .build();*/
+
+
                     stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(getActivity()).load(image).into(imageView)).show();
                 });
             });
@@ -123,5 +161,22 @@ public class GalleryFragment extends Fragment {
         thread.start();
 
         return mView;
+    }
+
+    private void hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        View decorView = getActivity().getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 }
