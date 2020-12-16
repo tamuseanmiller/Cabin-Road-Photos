@@ -6,12 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
+<!--    <TextView-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="YEET"-->
+<!--        android:layout_centerInParent="true">-->
+
+<!--    </TextView>-->
+
+    <com.google.android.material.button.MaterialButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="YEET"
-        android:layout_centerInParent="true">
-
-    </TextView>
+        android:id="@+id/gallery_button"
+        android:text="gallery"
+        android:layout_centerInParent="true"/>
 
 </RelativeLayout>

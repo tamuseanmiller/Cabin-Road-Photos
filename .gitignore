@@ -6,3 +6,5 @@ CabinRoadPhotos/service_account_key.json
 CabinRoadPhotos/app/google-services.json
 
 CabinRoadPhotos/app/src/main/assets/service_account_key.json
+
+CabinRoadPhotos/app/src/main/java/com/rebeccamcfadden/cabinroadphotos/Properties.java
