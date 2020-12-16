@@ -2,6 +2,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
