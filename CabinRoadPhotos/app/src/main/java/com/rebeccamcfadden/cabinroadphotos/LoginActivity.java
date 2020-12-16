@@ -49,7 +49,7 @@ public class LoginActivity extends AppCompatActivity {
         account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
 //            Don't reach this page
-
+//            firebaseAuthWithGoogle(account.getIdToken());
         }
 
         // On Click Listener for login
