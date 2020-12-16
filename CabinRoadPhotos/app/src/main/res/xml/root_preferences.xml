@@ -1,0 +1,38 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    app:title="Application Settings">
+
+    <PreferenceCategory app:title="System">
+        <SwitchPreferenceCompat
+            app:key="preventDim"
+            app:title="Prevent dimming" />
+        <SeekBarPreference
+            app:defaultValue="50"
+            app:key="brightness"
+            app:title="Brightness"
+            app:updatesContinuously="true"
+            android:min="0"
+            android:max="100"
+            app:seekBarIncrement="5"
+            />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Slideshow">
+
+        <SwitchPreferenceCompat
+            app:key="autoplay"
+            app:title="Autoplay videos" />
+
+        <SeekBarPreference
+            app:defaultValue="100"
+            app:key="autoplaySpeed"
+            app:title="Autoplay Speed"
+            app:updatesContinuously="false"
+            android:min="10"
+            android:max="600"
+            app:seekBarIncrement="5"
+            />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

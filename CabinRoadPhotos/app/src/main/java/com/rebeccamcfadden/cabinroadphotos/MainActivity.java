@@ -188,6 +188,12 @@ public class MainActivity extends AppCompatActivity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.settings:
+                SettingsFragment settingsFragment = new SettingsFragment();
+                FragmentManager transaction = getSupportFragmentManager();
+                transaction.beginTransaction()
+                        .replace(R.id.main_layout, settingsFragment) //<---replace a view in your layout (id: container) with the newFragment
+                        .addToBackStack(null)
+                        .commit();
 
                 return true;
             case R.id.sign_out:

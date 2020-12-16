@@ -2,6 +2,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -67,7 +68,7 @@ public class GalleryFragment extends Fragment {
             String albumID = photosLibraryClient.listAlbums().getPage().getResponse().getAlbums(albumIndex).getId();
 
             // Get Media Items from Album and add to String List
-            AtomicReference<List<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).getPage().getResponse().getMediaItemsList());
+            AtomicReference<Iterable<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
             AtomicReference<List<String>> finalImages = new AtomicReference<>(new ArrayList<>());
             AtomicReference<List<String>> videos = new AtomicReference<>(new ArrayList<>());
             AtomicReference<List<String>> notVideos = new AtomicReference<>(new ArrayList<>());
@@ -125,7 +126,7 @@ public class GalleryFragment extends Fragment {
 
             // Swipe Refresh Actions
             refreshGallery.setOnRefreshListener(() -> {
-                images.set(photosLibraryClient.searchMediaItems(albumID).getPage().getResponse().getMediaItemsList());
+                images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
                 finalImages.get().clear();
                 for (MediaItem i : images.get()) {
                     finalImages.get().add(i.getBaseUrl());
@@ -139,7 +140,7 @@ public class GalleryFragment extends Fragment {
                 int cnt = 0;
 
                 // Traverse full album
-                while (cnt <= images.get().size()) {
+                while (cnt <= finalImages.get().size()) {
                     if (stfalconImageViewer != null) {
                         int finalCnt = cnt;
                         requireActivity().runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalCnt));
