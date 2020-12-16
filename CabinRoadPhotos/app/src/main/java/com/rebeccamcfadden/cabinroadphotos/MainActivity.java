@@ -15,11 +15,19 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.common.api.Status;
 import com.google.android.material.button.MaterialButton;
 import com.google.api.client.googleapis.util.Utils;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.UserCredentials;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.library.v1.PhotosLibrarySettings;
 import com.google.photos.types.proto.MediaItem;
@@ -47,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private PhotosLibraryClient photosLibraryClient;
     private Thread t1;
     private String idToken;
+    private GoogleSignInOptions gso;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +66,13 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         idToken = intent.getStringExtra("idToken");
+
+        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(Properties.getWebAPIKey())
+                .requestServerAuthCode(Properties.getWebAPIKey())
+                .requestEmail()
+                .requestScopes(new Scope("https://www.googleapis.com/auth/photoslibrary"))
+                .build();
 
         getAccessToken();
 
@@ -161,7 +177,10 @@ public class MainActivity extends AppCompatActivity {
 
                 return true;
             case R.id.sign_out:
-
+                // Sign out
+                GoogleSignIn.getClient(this, gso).signOut();
+                Intent intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
