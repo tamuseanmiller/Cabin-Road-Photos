@@ -16,6 +16,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.types.proto.Album;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,7 +47,11 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(true));
 
             // Fetch albums
-            AtomicReference<List<Album>> albums = new AtomicReference<>(photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList());
+            List<Album> preAlbum = new ArrayList<>();;
+            for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
+                preAlbum.add(album);
+            }
+            AtomicReference<List<Album>> albums = new AtomicReference<List<Album>>(preAlbum);
             RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
             RecyclerView albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);
