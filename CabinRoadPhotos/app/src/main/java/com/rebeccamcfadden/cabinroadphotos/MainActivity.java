@@ -4,7 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -12,6 +16,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
+import com.google.api.client.googleapis.util.Utils;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.UserCredentials;
@@ -60,7 +65,8 @@ public class MainActivity extends AppCompatActivity {
 
             getPhotosLibrary();
 
-            Fragment albumFragment = new AlbumFragment(photosLibraryClient);
+            AlbumFragment albumFragment = new AlbumFragment();
+            albumFragment.setPhotosLibraryClient(photosLibraryClient);
             FragmentManager transaction = getSupportFragmentManager();
             transaction.beginTransaction()
                     .replace(R.id.main_layout, albumFragment) //<---replace a view in your layout (id: container) with the newFragment
@@ -137,5 +143,28 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    // Overflow Menu overrides ---------------------------------------
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.overflow_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.settings:
+
+                return true;
+            case R.id.sign_out:
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.types.proto.Album;
 import com.stfalcon.imageviewer.StfalconImageViewer;
@@ -25,10 +26,13 @@ import io.cabriole.decorator.GridMarginDecoration;
 
 public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums.ItemClickListener {
 
-    private final PhotosLibraryClient photosLibraryClient;
+    private PhotosLibraryClient photosLibraryClient;
 
-    public AlbumFragment(PhotosLibraryClient photosLibraryClient) {
-        // Required empty public constructor
+    public AlbumFragment() {
+
+    }
+
+    public void setPhotosLibraryClient(PhotosLibraryClient photosLibraryClient) {
         this.photosLibraryClient = photosLibraryClient;
     }
 
@@ -56,13 +60,21 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         });
         thread.start();
 
+        // Create Album Button
+        ExtendedFloatingActionButton createAlbumButton = mView.findViewById(R.id.create_album_button);
+        createAlbumButton.setOnClickListener(v -> {
+//            photosLibraryClient.createAlbum();
+        });
+
         return mView;
     }
 
     // RecyclerView onClick
     @Override
     public void onItemClick(View view, int position) {
-        Fragment galleryFragment = new GalleryFragment(photosLibraryClient, position);
+        GalleryFragment galleryFragment = new GalleryFragment();
+        galleryFragment.setPhotosLibraryClient(photosLibraryClient);
+        galleryFragment.setAlbumIndex(position);
         FragmentManager transaction = getActivity().getSupportFragmentManager();
         transaction.beginTransaction()
                 .replace(R.id.main_layout, galleryFragment) //<---replace a view in your layout (id: container) with the newFragment
