@@ -3,8 +3,66 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/white"
     tools:context=".AlbumFragment">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="10dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+            app:behavior_hideable="true"
+            app:behavior_peekHeight="0dp"
+            android:background="@color/whiteDark"
+            android:id="@+id/album_sheet">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/textLayout"
+                android:hint="@string/album_name"
+                android:layout_marginRight="80dp"
+                android:layout_marginLeft="80dp"
+                app:hintAnimationEnabled="true"
+                android:paddingEnd="30dp"
+                android:paddingStart="30dp"
+                app:errorTextColor="@color/design_default_color_error"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_centerHorizontal="true"
+                app:boxStrokeWidth=".5dp"
+                app:boxStrokeWidthFocused="1dp"
+                android:layout_marginTop="@dimen/activity_vertical_margin">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="30dp"
+                    android:id="@+id/textField"
+                    android:textColorHint="@color/green_accent"
+                    android:inputType="text"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/done"
+                android:id="@+id/done_button"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/textLayout"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/green_accent"/>
+
+        </RelativeLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:layout_width="match_parent"

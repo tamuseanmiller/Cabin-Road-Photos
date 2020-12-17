@@ -15,7 +15,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.photos.library.v1.PhotosLibraryClient;
+import com.google.photos.library.v1.proto.Filters;
+import com.google.photos.library.v1.proto.UpdateAlbumRequest;
+import com.google.photos.library.v1.proto.UpdateAlbumRequestOrBuilder;
 import com.google.photos.types.proto.MediaItem;
+import com.google.protobuf.CodedInputStream;
 import com.stfalcon.imageviewer.StfalconImageViewer;
 import com.veinhorn.scrollgalleryview.MediaInfo;
 import com.veinhorn.scrollgalleryview.ScrollGalleryView;
@@ -123,7 +127,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                             .build();*/
 
 
-                    stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(getActivity()).load(image).into(imageView)).show();
+                    stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView)).show();
                 });
             });
 
@@ -131,10 +135,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             refreshGallery.setOnRefreshListener(() -> {
                 images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
                 finalImages.get().clear();
+                ArrayList<String> temp = new ArrayList<>();
                 for (MediaItem i : images.get()) {
-                    finalImages.get().add(i.getBaseUrl());
+                    temp.add(i.getBaseUrl());
                 }
-                galleryAdapter.notifyDataSetChanged();
+                finalImages.get().addAll(temp);
+                temp.clear();
+                requireActivity().runOnUiThread(galleryAdapter::notifyDataSetChanged);
                 requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(false));
             });
 
@@ -167,45 +174,24 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return mView;
     }
 
-    private void hideSystemUI() {
-        // Enables regular immersive mode.
-        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        View decorView = getActivity().getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
-    }
-
     @Override
     public void onItemClick(View view, int position) {
 
-        StfalconImageViewer stfalconImageViewer = null;
-        stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
+        StfalconImageViewer stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
                 (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView))
                 .show();
 
         stfalconImageViewer.setCurrentPosition(position);
 
         // Start slideshow
-        StfalconImageViewer finalStfalconImageViewer = stfalconImageViewer;
         Thread t2 = new Thread(() -> {
             int cnt = position;
 
             // Traverse full album
             while (cnt <= finalImages.get().size()) {
-                if (finalStfalconImageViewer != null) {
-                    int finalCnt = cnt;
-                    requireActivity().runOnUiThread(() -> finalStfalconImageViewer.setCurrentPosition(finalCnt));
-                    cnt++;
-                }
+                int finalCnt = cnt;
+                requireActivity().runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalCnt));
+                cnt++;
                 try {
                     // Sleep for 5 minutes
                     Thread.sleep(50000);
