@@ -1,7 +1,9 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -11,8 +13,16 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.types.proto.Album;
 
@@ -79,7 +89,31 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         // Create Album Button
         ExtendedFloatingActionButton createAlbumButton = mView.findViewById(R.id.create_album_button);
         createAlbumButton.setOnClickListener(v -> {
-//            photosLibraryClient.createAlbum();
+            RelativeLayout bottomSheet = mView.findViewById(R.id.album_sheet);
+            BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
+        });
+
+        // Create Album Sheet
+        TextInputEditText textField = mView.findViewById(R.id.textField);
+        MaterialButton doneButton = mView.findViewById(R.id.done_button);
+
+        // Create Album bottomsheet onClick
+        doneButton.setOnClickListener(v -> {
+            if (!textField.getText().toString().isEmpty()) {
+                MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(getActivity());
+                dialogBuilder.setTitle("Create Album");
+                dialogBuilder.setMessage("Are you sure you want to create an album named " + textField.getText() + "?");
+                dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
+                    photosLibraryClient.createAlbum(String.valueOf(textField.getText()));
+                });
+                dialogBuilder.setNegativeButton("No", (dialog, which) -> {
+                    dialog.dismiss();
+                });
+                dialogBuilder.show();
+            } else {
+                textField.setError("Input A Name");
+            }
         });
 
         return mView;
