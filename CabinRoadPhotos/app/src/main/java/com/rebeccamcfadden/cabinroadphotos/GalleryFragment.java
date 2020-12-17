@@ -31,11 +31,12 @@ import ogbe.ozioma.com.glideimageloader.dsl.DSL;
 
 import static ogbe.ozioma.com.glideimageloader.dsl.DSL.image;
 
-public class GalleryFragment extends Fragment {
+public class GalleryFragment extends Fragment implements RecyclerViewAdapterGallery.ItemClickListener {
 
     private PhotosLibraryClient photosLibraryClient;
     private int albumIndex;
     private StfalconImageViewer stfalconImageViewer;
+    private AtomicReference<List<String>> finalImages;
 
     public GalleryFragment() {
         albumIndex = 0;
@@ -45,6 +46,7 @@ public class GalleryFragment extends Fragment {
     public void setPhotosLibraryClient(PhotosLibraryClient photosLibraryClient) {
         this.photosLibraryClient = photosLibraryClient;
     }
+
     public void setAlbumIndex(int albumIndex) {
         this.albumIndex = albumIndex;
     }
@@ -69,7 +71,7 @@ public class GalleryFragment extends Fragment {
 
             // Get Media Items from Album and add to String List
             AtomicReference<Iterable<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
-            AtomicReference<List<String>> finalImages = new AtomicReference<>(new ArrayList<>());
+            finalImages = new AtomicReference<>(new ArrayList<>());
             AtomicReference<List<String>> videos = new AtomicReference<>(new ArrayList<>());
             AtomicReference<List<String>> notVideos = new AtomicReference<>(new ArrayList<>());
             for (MediaItem i : images.get()) {
@@ -83,6 +85,7 @@ public class GalleryFragment extends Fragment {
 
             // Initialize RecyclerView
             RecyclerViewAdapterGallery galleryAdapter = new RecyclerViewAdapterGallery(getContext(), finalImages.get());
+            galleryAdapter.setClickListener(this);
             requireActivity().runOnUiThread(() -> {
                 RecyclerView galleryRecycler = mView.findViewById(R.id.gallery_recycler);
                 ColumnProvider col = () -> 10;
@@ -179,5 +182,38 @@ public class GalleryFragment extends Fragment {
                         // Hide the nav bar and status bar
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN);
+    }
+
+    @Override
+    public void onItemClick(View view, int position) {
+
+        StfalconImageViewer stfalconImageViewer = null;
+        stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
+                (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView))
+                .show();
+
+        stfalconImageViewer.setCurrentPosition(position);
+
+        // Start slideshow
+        StfalconImageViewer finalStfalconImageViewer = stfalconImageViewer;
+        Thread t2 = new Thread(() -> {
+            int cnt = position;
+
+            // Traverse full album
+            while (cnt <= finalImages.get().size()) {
+                if (finalStfalconImageViewer != null) {
+                    int finalCnt = cnt;
+                    requireActivity().runOnUiThread(() -> finalStfalconImageViewer.setCurrentPosition(finalCnt));
+                    cnt++;
+                }
+                try {
+                    // Sleep for 5 minutes
+                    Thread.sleep(50000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t2.start();
     }
 }

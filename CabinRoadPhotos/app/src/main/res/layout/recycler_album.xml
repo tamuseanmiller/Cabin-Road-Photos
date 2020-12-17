@@ -10,6 +10,7 @@
         android:layout_height="100dp"
         android:clickable="true"
         android:focusable="true"
+        app:rippleColor="@color/green_accent"
         android:id="@+id/album_image_card">
 
         <com.google.android.material.imageview.ShapeableImageView

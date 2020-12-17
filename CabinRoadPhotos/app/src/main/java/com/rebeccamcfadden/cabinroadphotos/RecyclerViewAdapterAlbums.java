@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.photos.types.proto.Album;
 
@@ -64,14 +65,17 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView albumName;
         ShapeableImageView albumImage;
+        MaterialCardView albumImageCard;
 
         ViewHolder(View itemView) {
             super(itemView);
             albumImage = itemView.findViewById(R.id.album_image);
             albumName = itemView.findViewById(R.id.album_name);
+            albumImageCard = itemView.findViewById(R.id.album_image_card);
 
-            albumImage.setOnClickListener(this);
-            itemView.setOnClickListener(this);
+//            albumImage.setOnClickListener(this);
+//            itemView.setOnClickListener(this);
+            albumImageCard.setOnClickListener(this);
         }
 
         @Override

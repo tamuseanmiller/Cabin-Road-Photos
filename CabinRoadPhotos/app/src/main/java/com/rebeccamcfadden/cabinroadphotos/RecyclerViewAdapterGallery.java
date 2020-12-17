@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 
 import java.util.List;
@@ -61,12 +62,15 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
     // stores and recycles views as they are scrolled off screen
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         ShapeableImageView galleryImage;
+        MaterialCardView galleryImageCard;
 
         ViewHolder(View itemView) {
             super(itemView);
             galleryImage = itemView.findViewById(R.id.gallery_image);
+            galleryImageCard = itemView.findViewById(R.id.gallery_image_card);
 
-            itemView.setOnClickListener(this);
+            galleryImageCard.setOnClickListener(this);
+//            itemView.setOnClickListener(this);
         }
 
         @Override
