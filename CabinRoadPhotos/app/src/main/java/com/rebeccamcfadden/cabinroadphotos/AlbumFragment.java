@@ -79,8 +79,10 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             });
 
             refreshAlbum.setOnRefreshListener(() -> {
-                albums.set(photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList());
-                albumAdapter.notifyDataSetChanged();
+                List<Album> temp = photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList();
+                albums.get().clear();
+                albums.get().addAll(temp);
+                requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
                 requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
             });
         });
@@ -101,11 +103,21 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         // Create Album bottomsheet onClick
         doneButton.setOnClickListener(v -> {
             if (!textField.getText().toString().isEmpty()) {
+
+                // Create Dialog
                 MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(getActivity());
                 dialogBuilder.setTitle("Create Album");
                 dialogBuilder.setMessage("Are you sure you want to create an album named " + textField.getText() + "?");
                 dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
+
+                    // Create Album from onClick
                     photosLibraryClient.createAlbum(String.valueOf(textField.getText()));
+
+                    // Get rid of bottom sheet
+                    RelativeLayout bottomSheet = mView.findViewById(R.id.album_sheet);
+                    BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+
                 });
                 dialogBuilder.setNegativeButton("No", (dialog, which) -> {
                     dialog.dismiss();

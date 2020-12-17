@@ -127,7 +127,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                             .build();*/
 
 
-                    stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(getActivity()).load(image).into(imageView)).show();
+                    stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView)).show();
                 });
             });
 
@@ -135,10 +135,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             refreshGallery.setOnRefreshListener(() -> {
                 images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
                 finalImages.get().clear();
+                ArrayList<String> temp = new ArrayList<>();
                 for (MediaItem i : images.get()) {
-                    finalImages.get().add(i.getBaseUrl());
+                    temp.add(i.getBaseUrl());
                 }
-                galleryAdapter.notifyDataSetChanged();
+                finalImages.get().addAll(temp);
+                temp.clear();
+                requireActivity().runOnUiThread(galleryAdapter::notifyDataSetChanged);
                 requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(false));
             });
 
