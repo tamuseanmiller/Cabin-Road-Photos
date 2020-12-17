@@ -7,12 +7,11 @@
             app:key="preventDim"
             app:title="Prevent dimming" />
         <SeekBarPreference
-            app:defaultValue="50"
             app:key="brightness"
             app:title="Brightness"
             app:updatesContinuously="true"
             android:min="0"
-            android:max="100"
+            android:max="255"
             app:seekBarIncrement="5"
             />
     </PreferenceCategory>
@@ -24,7 +23,6 @@
             app:title="Autoplay videos" />
 
         <SeekBarPreference
-            app:defaultValue="100"
             app:key="autoplaySpeed"
             app:title="Autoplay Speed"
             app:updatesContinuously="false"
