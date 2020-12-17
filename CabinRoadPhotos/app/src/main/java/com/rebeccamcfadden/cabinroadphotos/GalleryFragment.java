@@ -1,10 +1,12 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.preference.*;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -41,6 +43,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private int albumIndex;
     private StfalconImageViewer stfalconImageViewer;
     private AtomicReference<List<String>> finalImages;
+    private int autoplayDuration;
 
     public GalleryFragment() {
         albumIndex = 0;
@@ -57,12 +60,23 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
     }
+
+//    @Override
+//    public void onResume() {
+//        showSystemUI();
+//        super.onResume();
+//    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        autoplayDuration = new SharedPreferencesManager(getContext()).retrieveInt("autoplaySpeed", 20);
+        Log.d("slideshow", "autoplay duration set to " + autoplayDuration + " seconds");
+
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
 
@@ -126,7 +140,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                             .add(DSL.images(notVideos.get()))
                             .build();*/
 
-
+//                    hideSystemUI();
                     stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView)).show();
                 });
             });
@@ -158,7 +172,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     }
                     try {
                         // Sleep for 5 minutes
-                        Thread.sleep(50000);
+                        Thread.sleep(autoplayDuration * 1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -182,24 +196,32 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 .show();
 
         stfalconImageViewer.setCurrentPosition(position);
+    }
 
-        // Start slideshow
-        Thread t2 = new Thread(() -> {
-            int cnt = position;
+    private void hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        View decorView = getActivity().getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
+    }
 
-            // Traverse full album
-            while (cnt <= finalImages.get().size()) {
-                int finalCnt = cnt;
-                requireActivity().runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalCnt));
-                cnt++;
-                try {
-                    // Sleep for 5 minutes
-                    Thread.sleep(50000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        t2.start();
+    // Shows the system bars by removing all the flags
+    // except for the ones that make the content appear under the system bars.
+    private void showSystemUI() {
+        View decorView = getActivity().getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
     }
 }

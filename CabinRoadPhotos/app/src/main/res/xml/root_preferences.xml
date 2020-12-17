@@ -24,11 +24,12 @@
 
         <SeekBarPreference
             app:key="autoplaySpeed"
-            app:title="Autoplay Speed"
+            app:title="Autoplay Speed (seconds)"
             app:updatesContinuously="false"
             android:min="10"
             android:max="600"
             app:seekBarIncrement="5"
+            app:showSeekBarValue="true"
             />
 
     </PreferenceCategory>
