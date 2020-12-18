@@ -1,6 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.CabinRoadPhotos" parent="Theme.MaterialComponents.Light.DarkActionBar">
+    <style name="Theme.CabinRoadPhotos.NoActionBar" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.CabinRoadPhotos" parent="Theme.CabinRoadPhotos.NoActionBar">
+        <item name="android:id">@style/app_theme</item>
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/green_accent</item>
         <item name="colorPrimaryVariant">@color/green_dark</item>
@@ -10,13 +15,18 @@
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+<!--        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>-->
+
         <!-- Customize your theme here. -->
     </style>
+
+
 
     <style
         name="MyDialogTheme"
         parent="Theme.CabinRoadPhotos">
         <item name="colorPrimary">@color/colorPrimary</item>
     </style>
+
+    <style name="app_theme">app_theme</style>
 </resources>

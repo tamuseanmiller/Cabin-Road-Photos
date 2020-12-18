@@ -3,6 +3,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
+import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -10,6 +11,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +38,7 @@ import io.cabriole.decorator.GridMarginDecoration;
 public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums.ItemClickListener {
 
     private PhotosLibraryClient photosLibraryClient;
+    private AtomicReference<List<Album>> albums;
 
     public AlbumFragment() {
 
@@ -61,7 +64,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
                 preAlbum.add(album);
             }
-            AtomicReference<List<Album>> albums = new AtomicReference<List<Album>>(preAlbum);
+            albums = new AtomicReference<List<Album>>(preAlbum);
             RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
             RecyclerView albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);
@@ -79,9 +82,12 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             });
 
             refreshAlbum.setOnRefreshListener(() -> {
-                List<Album> temp = photosLibraryClient.listAlbums().getPage().getResponse().getAlbumsList();
+                Iterable<Album> temp = photosLibraryClient.listAlbums().iterateAll();
                 albums.get().clear();
-                albums.get().addAll(temp);
+                List<Album> albums1 = albums.get();
+                for (Album album : temp) {
+                    albums1.add(album);
+                }
                 requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
                 requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
             });
@@ -136,7 +142,8 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
     public void onItemClick(View view, int position) {
         GalleryFragment galleryFragment = new GalleryFragment();
         galleryFragment.setPhotosLibraryClient(photosLibraryClient);
-        galleryFragment.setAlbumIndex(position);
+        galleryFragment.setAlbumId(albums.get().get(position).getId());
+        galleryFragment.setAlbumTitle(albums.get().get(position).getTitle());
         FragmentManager transaction = getActivity().getSupportFragmentManager();
         transaction.beginTransaction()
                 .replace(R.id.main_layout, galleryFragment) //<---replace a view in your layout (id: container) with the newFragment

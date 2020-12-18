@@ -6,6 +6,9 @@ import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.appcompat.widget.Toolbar;
 import androidx.preference.*;
 
 import androidx.fragment.app.Fragment;
@@ -40,13 +43,16 @@ import static ogbe.ozioma.com.glideimageloader.dsl.DSL.image;
 public class GalleryFragment extends Fragment implements RecyclerViewAdapterGallery.ItemClickListener {
 
     private PhotosLibraryClient photosLibraryClient;
-    private int albumIndex;
+    private String albumID;
     private StfalconImageViewer stfalconImageViewer;
     private AtomicReference<List<String>> finalImages;
     private int autoplayDuration;
+    private String albumTitle;
+
+    private Toolbar actionbar;
 
     public GalleryFragment() {
-        albumIndex = 0;
+        albumID = null;
         photosLibraryClient = null;
     }
 
@@ -54,8 +60,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         this.photosLibraryClient = photosLibraryClient;
     }
 
-    public void setAlbumIndex(int albumIndex) {
-        this.albumIndex = albumIndex;
+    public void setAlbumId(String albumId) {
+        this.albumID = albumId;
     }
 
     @Override
@@ -80,12 +86,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
 
+        actionbar = (Toolbar) requireActivity().findViewById(R.id.toolbar);
+        if (actionbar != null) {
+            Log.d("debug", "action bar was non null");
+            actionbar.setNavigationIcon(R.drawable.ic_arrow_back);
+            actionbar.setNavigationOnClickListener(v -> {
+                actionbar.setNavigationIcon(null);
+                getActivity().onBackPressed();
+            });
+        }
+
         Thread thread = new Thread(() -> {
+            ((TextView) mView.findViewById(R.id.album_title)).setText(albumTitle);
             SwipeRefreshLayout refreshGallery = mView.findViewById(R.id.refresh_gallery);
             requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(true));
-
-            // Get AlbumID
-            String albumID = photosLibraryClient.listAlbums().getPage().getResponse().getAlbums(albumIndex).getId();
 
             // Get Media Items from Album and add to String List
             AtomicReference<Iterable<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
@@ -141,7 +155,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                             .build();*/
 
 //                    hideSystemUI();
-                    stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(), (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView)).show();
+                    stfalconImageViewer = new StfalconImageViewer.Builder<>(
+                            getContext(), finalImages.get(), (imageView, image) ->
+                            Glide.with(requireActivity()).load(image).into(imageView))
+//                            .withDismissListener(() -> {
+//                                showSystemUI();
+//                            })
+                            .show();
                 });
             });
 
@@ -190,9 +210,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     @Override
     public void onItemClick(View view, int position) {
-
+//        hideSystemUI();
+        Log.d("debug", "we are on this line");
         StfalconImageViewer stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
                 (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView))
+//                .withDismissListener(() -> {
+//                    showSystemUI();
+//                })
                 .show();
 
         stfalconImageViewer.setCurrentPosition(position);
@@ -202,7 +226,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         // Enables regular immersive mode.
         // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
         // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        View decorView = getActivity().getWindow().getDecorView();
+        View decorView = requireActivity().getWindow().getDecorView();
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE
                         // Set the content to appear under the system bars so that the
@@ -219,9 +243,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     // except for the ones that make the content appear under the system bars.
     private void showSystemUI() {
         View decorView = getActivity().getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+    }
+
+    public void setAlbumTitle(String title) {
+        this.albumTitle = title;
     }
 }

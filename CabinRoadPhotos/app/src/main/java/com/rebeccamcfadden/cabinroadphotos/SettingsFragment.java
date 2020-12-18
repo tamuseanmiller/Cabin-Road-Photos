@@ -15,6 +15,7 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.widget.Toolbar;
 import androidx.preference.*;
 
 import static android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS;
@@ -43,6 +44,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View mView = super.onCreateView(inflater, container, savedInstanceState);
+
+        Toolbar actionbar = (Toolbar) requireActivity().findViewById(R.id.toolbar);
+        if (actionbar != null) {
+            Log.d("debug", "action bar was non null");
+            actionbar.setNavigationIcon(R.drawable.ic_arrow_back);
+            actionbar.setNavigationOnClickListener(v -> {
+                actionbar.setNavigationIcon(null);
+                getActivity().onBackPressed();
+            });
+        }
 
         mDimming = (SwitchPreferenceCompat) getPreferenceManager().findPreference("preventDim");
         mDimming.setDefaultValue(preferencesManager.retrieveBoolean("preventDim", false));
@@ -80,6 +92,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             preferencesManager.storeBoolean("preventDim", (boolean) newValue);
             return true;
         });
-        return super.onCreateView(inflater, container, savedInstanceState);
+        return mView;
     }
 }
