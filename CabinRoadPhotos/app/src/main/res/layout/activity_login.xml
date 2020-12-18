@@ -5,37 +5,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".LoginActivity">
+
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        app:title="Cabin Road Photos"
+        android:id="@+id/toolbar_login"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
+        android:elevation="4dp"
         android:theme="@style/Theme.CabinRoadPhotos"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        android:elevation="4dp"
-        />
-
-<!--    <com.google.android.gms.common.SignInButton-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_centerInParent="true"-->
-<!--        android:id="@+id/sign_in_button"-->
-<!--        android:layout_marginLeft="20dp"-->
-<!--        android:layout_marginRight="20dp"-->
-<!--        android:layout_marginBottom="20dp">-->
-
-<!--    </com.google.android.gms.common.SignInButton>-->
+        app:title="Cabin Road Photos"
+        app:titleTextColor="@color/white" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/sign_in_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:icon="@drawable/google_photos"
-        app:iconTint="@color/white"
-        android:id="@+id/sign_in_button"
         android:layout_centerInParent="true"
-        android:textColor="@color/white"
         android:backgroundTint="@color/green_accent"
-        android:text="@string/sign_in_with_google"/>
+        android:text="@string/sign_in_with_google"
+        android:textColor="@color/white"
+        app:icon="@drawable/google_photos"
+        app:iconTint="@color/white" />
 
 </RelativeLayout>

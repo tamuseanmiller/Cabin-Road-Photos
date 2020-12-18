@@ -64,7 +64,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
                 preAlbum.add(album);
             }
-            albums = new AtomicReference<List<Album>>(preAlbum);
+            albums = new AtomicReference<>(preAlbum);
             RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
             RecyclerView albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);

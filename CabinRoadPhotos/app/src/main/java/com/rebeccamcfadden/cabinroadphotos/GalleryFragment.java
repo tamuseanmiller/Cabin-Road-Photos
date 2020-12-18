@@ -1,5 +1,9 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.preference.*;
 
 import androidx.fragment.app.Fragment;
@@ -86,10 +91,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
 
-        actionbar = (Toolbar) requireActivity().findViewById(R.id.toolbar);
+        // Set Action bar back button and colors
+        actionbar = requireActivity().findViewById(R.id.toolbar_main);
         if (actionbar != null) {
             Log.d("debug", "action bar was non null");
-            actionbar.setNavigationIcon(R.drawable.ic_arrow_back);
+            Drawable drawable = ContextCompat.getDrawable(getActivity(), R.drawable.ic_arrow_back);
+            drawable.setTint(ContextCompat.getColor(getActivity(), R.color.white));
+            actionbar.setNavigationIcon(drawable);
             actionbar.setNavigationOnClickListener(v -> {
                 actionbar.setNavigationIcon(null);
                 getActivity().onBackPressed();
@@ -211,12 +219,12 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     @Override
     public void onItemClick(View view, int position) {
 //        hideSystemUI();
-        Log.d("debug", "we are on this line");
+        Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
         StfalconImageViewer stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
                 (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView))
-//                .withDismissListener(() -> {
-//                    showSystemUI();
-//                })
+                .withDismissListener(() -> {
+                    showSystemUI();
+                })
                 .show();
 
         stfalconImageViewer.setCurrentPosition(position);

@@ -40,7 +40,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         // Toolbar customization
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar_login);
         setSupportActionBar(toolbar);
 
         // Create Sign in options for photos access and device code and idtoken

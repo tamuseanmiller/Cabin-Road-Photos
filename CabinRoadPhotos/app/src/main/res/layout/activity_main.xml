@@ -5,33 +5,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:theme="@style/Theme.CabinRoadPhotos.NoActionBar"
+    android:theme="@style/Theme.MaterialComponents.Light"
     android:id="@+id/main_layout"
     android:orientation="vertical">
+
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+        android:id="@+id/toolbar_main"
         app:title="Cabin Road Photos"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
+        app:titleTextColor="@color/white"
         android:theme="@style/Theme.CabinRoadPhotos"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        android:elevation="4dp"
-        />
-
-<!--    <TextView-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="YEET"-->
-<!--        android:layout_centerInParent="true">-->
-
-<!--    </TextView>-->
-
-<!--    <com.google.android.material.button.MaterialButton-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:id="@+id/gallery_button"-->
-<!--        android:text="gallery"-->
-<!--        android:layout_centerInParent="true"/>-->
+        android:elevation="4dp"/>
 
 </LinearLayout>

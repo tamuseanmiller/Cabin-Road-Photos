@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         idToken = intent.getStringExtra("idToken");
 
         // Toolbar customization
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
 
         // Sign in Options
