@@ -339,8 +339,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     public void onDetach() {
         super.onDetach();
         actionbar.setTitle("Cabin Road Photos");
-        mContext.getSupportActionBar().setDisplayShowCustomEnabled(false);
-
+        actionbar.setNavigationIcon(null);
         try {
             Fragment fragment = mContext.getSupportFragmentManager().findFragmentByTag("gallery_fragment");
             FragmentTransaction ft = mContext.getSupportFragmentManager()
