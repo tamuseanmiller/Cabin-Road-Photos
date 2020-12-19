@@ -74,12 +74,43 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             });
 
             refreshAlbum.setOnRefreshListener(() -> {
-                albums.get().clear();
-                for (Album album : getAllAlbums()) {
-                    albums.get().add(album);
-                }
+                refreshAlbums();
                 requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
                 requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
+            });
+
+            // Create Album Sheet
+            TextInputEditText textField = mView.findViewById(R.id.textField);
+            MaterialButton doneButton = mView.findViewById(R.id.done_button);
+
+            // Create Album bottomsheet onClick
+            doneButton.setOnClickListener(v -> {
+                if (!textField.getText().toString().isEmpty()) {
+
+                    // Create Dialog
+                    MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(getActivity());
+                    dialogBuilder.setTitle("Create Album");
+                    dialogBuilder.setMessage("Are you sure you want to create an album named " + textField.getText() + "?");
+                    dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
+
+                        // Create Album from onClick
+                        photosLibraryClient.createAlbum(String.valueOf(textField.getText()));
+
+                        // Get rid of bottom sheet
+                        RelativeLayout bottomSheet = mView.findViewById(R.id.album_sheet);
+                        BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+                        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                        requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
+                        refreshAlbums();
+                        requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
+                    });
+                    dialogBuilder.setNegativeButton("No", (dialog, which) -> {
+                        dialog.dismiss();
+                    });
+                    dialogBuilder.show();
+                } else {
+                    textField.setError("Input A Name");
+                }
             });
         });
         thread.start();
@@ -90,38 +121,6 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             RelativeLayout bottomSheet = mView.findViewById(R.id.album_sheet);
             BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
-        });
-
-        // Create Album Sheet
-        TextInputEditText textField = mView.findViewById(R.id.textField);
-        MaterialButton doneButton = mView.findViewById(R.id.done_button);
-
-        // Create Album bottomsheet onClick
-        doneButton.setOnClickListener(v -> {
-            if (!textField.getText().toString().isEmpty()) {
-
-                // Create Dialog
-                MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(getActivity());
-                dialogBuilder.setTitle("Create Album");
-                dialogBuilder.setMessage("Are you sure you want to create an album named " + textField.getText() + "?");
-                dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
-
-                    // Create Album from onClick
-                    photosLibraryClient.createAlbum(String.valueOf(textField.getText()));
-
-                    // Get rid of bottom sheet
-                    RelativeLayout bottomSheet = mView.findViewById(R.id.album_sheet);
-                    BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
-                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-
-                });
-                dialogBuilder.setNegativeButton("No", (dialog, which) -> {
-                    dialog.dismiss();
-                });
-                dialogBuilder.show();
-            } else {
-                textField.setError("Input A Name");
-            }
         });
 
         return mView;
@@ -164,5 +163,12 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             }
         });
         return preAlbum;
+    }
+
+    private void refreshAlbums() {
+        albums.get().clear();
+        for (Album album : getAllAlbums()) {
+            albums.get().add(album);
+        }
     }
 }

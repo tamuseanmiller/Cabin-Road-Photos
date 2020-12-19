@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ import android.view.WindowManager;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.preference.*;
 
 import java.net.URISyntaxException;
@@ -51,10 +53,12 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View mView = super.onCreateView(inflater, container, savedInstanceState);
 
-        Toolbar actionbar = requireActivity().findViewById(R.id.toolbar);
+        Toolbar actionbar = requireActivity().findViewById(R.id.toolbar_main);
         if (actionbar != null) {
             Log.d("debug", "action bar was non null");
-            actionbar.setNavigationIcon(R.drawable.ic_arrow_back);
+            Drawable drawable = ContextCompat.getDrawable(getActivity(), R.drawable.ic_arrow_back);
+            drawable.setTint(ContextCompat.getColor(getActivity(), R.color.white));
+            actionbar.setNavigationIcon(drawable);
             actionbar.setNavigationOnClickListener(v -> {
                 actionbar.setNavigationIcon(null);
                 getActivity().onBackPressed();
