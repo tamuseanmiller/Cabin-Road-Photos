@@ -2,22 +2,22 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:theme="@style/Theme.MaterialComponents.Light"
-    android:id="@+id/main_layout"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:theme="@style/Theme.CabinRoadPhotos.NoActionBar"
+    tools:context=".MainActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar_main"
-        app:title="Cabin Road Photos"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        app:titleTextColor="@color/white"
+        android:elevation="4dp"
         android:theme="@style/Theme.CabinRoadPhotos"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        android:elevation="4dp"/>
+        app:title="Cabin Road Photos"
+        app:titleTextColor="@color/white" />
 
 </LinearLayout>
