@@ -17,7 +17,9 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
 
         <!-- Status bar color. -->
-<!--        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>-->
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <!--Overflow icon color-->
+        <item name="android:textColorSecondary">@color/white</item>
         <!-- Customize your theme here. -->
     </style>
 

@@ -9,6 +9,6 @@
     <item android:gravity="center"
         android:height="250dp"
         android:width="250dp"
-        android:drawable="@drawable/ic_cabinrdphoto" />
+        android:drawable="@drawable/ic_cabinrdphoto_green" />
 
 </layer-list>

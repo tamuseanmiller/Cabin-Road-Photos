@@ -1,34 +1,30 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 
-import androidx.appcompat.widget.Toolbar;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.types.proto.Album;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,11 +56,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(true));
 
             // Fetch albums
-            List<Album> preAlbum = new ArrayList<>();;
-            for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
-                preAlbum.add(album);
-            }
-            albums = new AtomicReference<>(preAlbum);
+            albums = new AtomicReference<>(getAllAlbums());
             RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
             RecyclerView albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);
@@ -82,11 +74,9 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             });
 
             refreshAlbum.setOnRefreshListener(() -> {
-                Iterable<Album> temp = photosLibraryClient.listAlbums().iterateAll();
                 albums.get().clear();
-                List<Album> albums1 = albums.get();
-                for (Album album : temp) {
-                    albums1.add(album);
+                for (Album album : getAllAlbums()) {
+                    albums.get().add(album);
                 }
                 requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
                 requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
@@ -150,5 +140,29 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
                 .addToBackStack(null)
                 .commit();
 
+    }
+
+    private List<Album>getAllAlbums() {
+        List<Album> preAlbum = new ArrayList<>();
+        for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
+            preAlbum.add(album);
+        }
+        for (Album album : photosLibraryClient.listSharedAlbums().iterateAll()) {
+            if(!preAlbum.contains(album)) preAlbum.add(album);
+        }
+        Collections.sort(preAlbum, new Comparator<Album>() {
+            @Override
+            public int compare(Album album1, Album album2) {
+                if (album1.getTitle().isEmpty() && album2.getTitle().isEmpty()) {
+                    return 0;
+                } else if (album2.getTitle().isEmpty()) {
+                    return -1;
+                } else if (album1.getTitle().isEmpty()){
+                    return 1;
+                }
+                return album1.getTitle().compareTo(album2.getTitle());
+            }
+        });
+        return preAlbum;
     }
 }
