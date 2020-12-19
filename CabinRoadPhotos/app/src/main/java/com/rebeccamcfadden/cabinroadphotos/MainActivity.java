@@ -192,8 +192,8 @@ public class MainActivity extends AppCompatActivity {
                 SettingsFragment settingsFragment = new SettingsFragment();
                 FragmentManager transaction = getSupportFragmentManager();
                 transaction.beginTransaction()
-                        .replace(R.id.main_layout, settingsFragment) //<---replace a view in your layout (id: container) with the newFragment
-                        .addToBackStack(null)
+                        .add(R.id.main_layout, settingsFragment) //<---replace a view in your layout (id: container) with the newFragment
+                        .addToBackStack(MainActivity.class.getName())
                         .commit();
 
                 return true;

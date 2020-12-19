@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:tag="album_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/white"
+    android:tag="album_fragment"
     tools:context=".AlbumFragment">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -14,70 +14,76 @@
         android:elevation="10dp">
 
         <RelativeLayout
+            android:id="@+id/album_sheet"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+            android:background="@color/whiteDark"
             app:behavior_hideable="true"
             app:behavior_peekHeight="0dp"
-            android:background="@color/whiteDark"
-            android:id="@+id/album_sheet">
+            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/done_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/textLayout"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/green_accent"
+                android:text="@string/done"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
 
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/textLayout"
-                android:hint="@string/album_name"
-                android:layout_marginRight="80dp"
-                android:layout_marginLeft="80dp"
-                app:hintAnimationEnabled="true"
-                android:paddingEnd="30dp"
-                android:paddingStart="30dp"
-                app:errorTextColor="@color/design_default_color_error"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_centerHorizontal="true"
+                android:layout_marginLeft="80dp"
+                android:layout_marginTop="@dimen/activity_vertical_margin"
+                android:layout_marginRight="80dp"
+                android:hint="@string/album_name"
+                android:paddingStart="30dp"
+                android:paddingEnd="30dp"
                 app:boxStrokeWidth=".5dp"
                 app:boxStrokeWidthFocused="1dp"
-                android:layout_marginTop="@dimen/activity_vertical_margin">
+                app:errorTextColor="@color/design_default_color_error"
+                app:hintAnimationEnabled="true">
 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textField"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="30dp"
-                    android:id="@+id/textField"
-                    android:textColorHint="@color/green_accent"
-                    android:inputType="text"/>
+                    android:inputType="text"
+                    android:textColorHint="@color/green_accent" />
 
             </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/done"
-                android:id="@+id/done_button"
-                android:textSize="12sp"
-                android:textColor="@color/white"
-                android:layout_centerHorizontal="true"
-                android:layout_below="@id/textLayout"
-                android:layout_marginTop="20dp"
-                android:backgroundTint="@color/green_accent"/>
 
         </RelativeLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/refresh_album"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/refresh_album"
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingTop="@dimen/activity_vertical_margin"
         android:paddingRight="@dimen/activity_horizontal_margin">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/album_recycler"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_centerHorizontal="true" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/album_recycler"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_centerHorizontal="true" />
+
+        </RelativeLayout>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 

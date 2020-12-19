@@ -41,7 +41,11 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterAlbums.ViewHolder holder, int position) {
         Glide.with(holder.albumImage.getContext()).load(mData.get(position).getCoverPhotoBaseUrl()).into(holder.albumImage);
-        holder.albumName.setText(mData.get(position).getTitle());
+        if (mData.get(position).getTitle().length() > 26) {
+            holder.albumName.setText(mData.get(position).getTitle().substring(0, 25) + "...");
+        } else {
+            holder.albumName.setText(mData.get(position).getTitle());
+        }
     }
 
     @Override

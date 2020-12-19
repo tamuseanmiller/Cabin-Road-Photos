@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.cabriole.decorator.ColumnProvider;
@@ -81,9 +82,13 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             });
 
             refreshAlbum.setOnRefreshListener(() -> {
-                refreshAlbums();
-                requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
-                requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
+
+                Thread t2 = new Thread(() -> {
+                    refreshAlbums();
+                    requireActivity().runOnUiThread(albumAdapter::notifyDataSetChanged);
+                    requireActivity().runOnUiThread(() -> refreshAlbum.setRefreshing(false));
+                });
+                t2.start();
             });
 
             // Create Album Sheet
@@ -142,7 +147,8 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         galleryFragment.setAlbumTitle(albums.get().get(position).getTitle());
         FragmentManager transaction = getActivity().getSupportFragmentManager();
         transaction.beginTransaction()
-                .replace(R.id.main_layout, galleryFragment) //<---replace a view in your layout (id: container) with the newFragment
+                .hide(this)
+                .add(R.id.main_layout, galleryFragment) //<---replace a view in your layout (id: container) with the newFragment
                 .addToBackStack(null)
                 .commit();
 
@@ -165,7 +171,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
     // Adds both your albums and albums shared with you
     private List<Album> getAllAlbums() {
         List<Album> preAlbum = new ArrayList<>();
-        List<String> IDs = new ArrayList<>();
+        Set<String> IDs = new HashSet<>();
         for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
             preAlbum.add(album);
             IDs.add(album.getId());
@@ -173,18 +179,15 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         for (Album album : photosLibraryClient.listSharedAlbums().iterateAll()) {
             if (!IDs.contains(album.getId())) preAlbum.add(album);
         }
-        Collections.sort(preAlbum, new Comparator<Album>() {
-            @Override
-            public int compare(Album album1, Album album2) {
-                if (album1.getTitle().isEmpty() && album2.getTitle().isEmpty()) {
-                    return 0;
-                } else if (album2.getTitle().isEmpty()) {
-                    return -1;
-                } else if (album1.getTitle().isEmpty()) {
-                    return 1;
-                }
-                return album1.getTitle().compareTo(album2.getTitle());
+        Collections.sort(preAlbum, (album1, album2) -> {
+            if (album1.getTitle().isEmpty() && album2.getTitle().isEmpty()) {
+                return 0;
+            } else if (album2.getTitle().isEmpty()) {
+                return -1;
+            } else if (album1.getTitle().isEmpty()) {
+                return 1;
             }
+            return album1.getTitle().compareTo(album2.getTitle());
         });
         return preAlbum;
     }

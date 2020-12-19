@@ -1,5 +1,6 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
@@ -19,6 +20,8 @@ import android.widget.TextClock;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
@@ -64,6 +67,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private RecyclerView galleryRecycler;
     private RecyclerViewAdapterGallery galleryAdapter;
     private String albumTitle;
+    private AppCompatActivity mContext;
 
     private Toolbar actionbar;
 
@@ -102,24 +106,27 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
 
+
         // Set Action bar back button and colors
-        actionbar = requireActivity().findViewById(R.id.toolbar_main);
+        actionbar = mContext.findViewById(R.id.toolbar_main);
         if (actionbar != null) {
             Log.d("debug", "action bar was non null");
-            Drawable drawable = ContextCompat.getDrawable(getActivity(), R.drawable.ic_arrow_back);
-            drawable.setTint(ContextCompat.getColor(getActivity(), R.color.white));
+            Drawable drawable = ContextCompat.getDrawable(mContext, R.drawable.ic_arrow_back);
+            drawable.setTint(ContextCompat.getColor(mContext, R.color.white));
             actionbar.setNavigationIcon(drawable);
             actionbar.setTitle(albumTitle);
             actionbar.setNavigationOnClickListener(v -> {
                 actionbar.setNavigationIcon(null);
-                getActivity().onBackPressed();
+                mContext.onBackPressed();
             });
         }
 
         Thread thread = new Thread(() -> {
 //            ((TextView) mView.findViewById(R.id.album_title)).setText(albumTitle);
             SwipeRefreshLayout refreshGallery = mView.findViewById(R.id.refresh_gallery);
-            requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(true));
+
+            if (mContext != null)
+                mContext.runOnUiThread(() -> refreshGallery.setRefreshing(true));
 
             // Get Media Items from Album and add to String List
             AtomicReference<Iterable<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
@@ -136,73 +143,84 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
 
             // Initialize RecyclerView
-            galleryAdapter = new RecyclerViewAdapterGallery(getContext(), finalImages.get());
-            galleryAdapter.setClickListener(this);
-            requireActivity().runOnUiThread(() -> {
-                galleryRecycler = mView.findViewById(R.id.gallery_recycler);
+            if (mContext != null) {
+                galleryAdapter = new RecyclerViewAdapterGallery(getContext(), finalImages.get());
+                galleryAdapter.setClickListener(this);
+                if (mContext != null)
+                    mContext.runOnUiThread(() -> {
+                        galleryRecycler = mView.findViewById(R.id.gallery_recycler);
 
-                int numColumns = calculateNoOfColumns(getActivity(), 100);
+                        int numColumns = calculateNoOfColumns(mContext, 100);
 
-                ColumnProvider col = () -> numColumns;
-                galleryRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
-                galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
-                galleryRecycler.setAdapter(galleryAdapter);
-            });
+                        ColumnProvider col = () -> numColumns;
+                        galleryRecycler.setLayoutManager(new GridLayoutManager(mContext, numColumns));
+                        galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
+                        galleryRecycler.setAdapter(galleryAdapter);
+                    });
+            }
 
             // Set start slideshow functionality
             ExtendedFloatingActionButton startSlideshowButton = mView.findViewById(R.id.start_slideshow_button);
-            requireActivity().runOnUiThread(() -> {
-                startSlideshowButton.setOnClickListener(v -> {
+            if (mContext != null)
+                mContext.runOnUiThread(() -> {
+                    startSlideshowButton.setOnClickListener(v -> {
 
-                    /*ScrollGalleryView scrollGalleryView = mView.findViewById(R.id.scroll_gallery_view);
-                    scrollGalleryView.setVisibility(View.VISIBLE);
+                        /*ScrollGalleryView scrollGalleryView = mView.findViewById(R.id.scroll_gallery_view);
+                        scrollGalleryView.setVisibility(View.VISIBLE);
 
-                    hideSystemUI();
+                        hideSystemUI();
 
-                    scrollGalleryView
-                            .setThumbnailSize(200)
-                            .setZoom(true)
-                            .withHiddenThumbnails(true);
+                        scrollGalleryView
+                                .setThumbnailSize(200)
+                                .setZoom(true)
+                                .withHiddenThumbnails(true);
 
-                    ScrollGalleryView
-                            .from(scrollGalleryView)
-                            .settings(
-                                    GallerySettings
-                                            .from(getActivity().getSupportFragmentManager())
-                                            .thumbnailSize(10)
-                                            .enableZoom(true)
-                                            .build()
-                            )
-                            .add(DSL.video(videos.get().get(0), R.drawable.placeholder_image))
-                            .add(DSL.images(notVideos.get()))
-                            .build();*/
+                        ScrollGalleryView
+                                .from(scrollGalleryView)
+                                .settings(
+                                        GallerySettings
+                                                .from(mContext.getSupportFragmentManager())
+                                                .thumbnailSize(10)
+                                                .enableZoom(true)
+                                                .build()
+                                )
+                                .add(DSL.video(videos.get().get(0), R.drawable.placeholder_image))
+                                .add(DSL.images(notVideos.get()))
+                                .build();*/
 
-//                    hideSystemUI();
-                    LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
-                    final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
-                    stfalconImageViewer = new StfalconImageViewer.Builder<>(
-                            getContext(), finalImages.get(), (imageView, image) ->
-                            Glide.with(requireActivity()).load(image).into(imageView))
-                            .withOverlayView(overlayView)
-//                            .withDismissListener(() -> {
-//                                showSystemUI();
-//                            })
-                            .show();
+                        //                    hideSystemUI();
+
+                        LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
+                        final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
+                        stfalconImageViewer = new StfalconImageViewer.Builder<>(
+                                getContext(), finalImages.get(), (imageView, image) ->
+                                Glide.with(mContext).load(image).into(imageView))
+                                .withOverlayView(overlayView)
+                                //                            .withDismissListener(() -> {
+                                //                                showSystemUI();
+                                //                            })
+                                .show();
+
+                    });
                 });
-            });
 
             // Swipe Refresh Actions
             refreshGallery.setOnRefreshListener(() -> {
-                images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
-                finalImages.get().clear();
-                ArrayList<String> temp = new ArrayList<>();
-                for (MediaItem i : images.get()) {
-                    temp.add(i.getBaseUrl());
-                }
-                finalImages.get().addAll(temp);
-                temp.clear();
-                requireActivity().runOnUiThread(galleryAdapter::notifyDataSetChanged);
-                requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(false));
+                Thread t3 = new Thread(() -> {
+                    images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+                    finalImages.get().clear();
+                    ArrayList<String> temp = new ArrayList<>();
+                    for (MediaItem i : images.get()) {
+                        temp.add(i.getBaseUrl());
+                    }
+                    finalImages.get().addAll(temp);
+                    temp.clear();
+                    if (mContext != null) {
+                        mContext.runOnUiThread(galleryAdapter::notifyDataSetChanged);
+                        mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
+                    }
+                });
+                t3.start();
             });
 
             // Start slideshow
@@ -213,7 +231,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 while (cnt <= finalImages.get().size()) {
                     if (stfalconImageViewer != null) {
                         int finalCnt = cnt;
-                        requireActivity().runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalCnt));
+                        if (mContext != null)
+                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalCnt));
                         cnt++;
                     }
                     try {
@@ -226,10 +245,14 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             });
             t2.start();
 
-            requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(false));
+            if (mContext != null)
+                mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
 
         });
-        thread.start();
+
+        if (mContext != null)
+            thread.start();
+
 
         return mView;
     }
@@ -243,7 +266,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
         new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
-                (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView))
+                (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
 //                .withDismissListener(() -> {
 //                    showSystemUI();
 //                })
@@ -259,9 +282,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         super.onConfigurationChanged(newConfig);
 
         if (galleryAdapter != null) {
-            int numColumns = calculateNoOfColumns(getActivity(), 100);
+            int numColumns = calculateNoOfColumns(mContext, 100);
             ColumnProvider col = () -> numColumns;
-            galleryRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
+            galleryRecycler.setLayoutManager(new GridLayoutManager(mContext, numColumns));
             galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
             galleryRecycler.setAdapter(galleryAdapter);
         }
@@ -280,7 +303,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 //        // Enables regular immersive mode.
 //        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
 //        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-//        View decorView = requireActivity().getWindow().getDecorView();
+//        View decorView = mContext.getWindow().getDecorView();
 //        decorView.setSystemUiVisibility(
 //                View.SYSTEM_UI_FLAG_IMMERSIVE
 //                        // Set the content to appear under the system bars so that the
@@ -296,7 +319,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     // Shows the system bars by removing all the flags
     // except for the ones that make the content appear under the system bars.
     private void showSystemUI() {
-        View decorView = getActivity().getWindow().getDecorView();
+        View decorView = mContext.getWindow().getDecorView();
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
@@ -305,12 +328,39 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof MainActivity) {
+            mContext = (AppCompatActivity) context;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        actionbar.setTitle("Cabin Road Photos");
+        mContext.getSupportActionBar().setDisplayShowCustomEnabled(false);
 
         try {
-            Fragment fragment = getActivity().getSupportFragmentManager().findFragmentByTag("album_fragment");
-            FragmentTransaction ft = getActivity().getSupportFragmentManager()
+            Fragment fragment = mContext.getSupportFragmentManager().findFragmentByTag("gallery_fragment");
+            FragmentTransaction ft = mContext.getSupportFragmentManager()
+                    .beginTransaction();
+            ft.remove(fragment);
+            ft.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        mContext = null;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        actionbar.setTitle("Cabin Road Photos");
+
+        try {
+            Fragment fragment = mContext.getSupportFragmentManager().findFragmentByTag("gallery_fragment");
+            FragmentTransaction ft = mContext.getSupportFragmentManager()
                     .beginTransaction();
             ft.remove(fragment);
             ft.commit();
