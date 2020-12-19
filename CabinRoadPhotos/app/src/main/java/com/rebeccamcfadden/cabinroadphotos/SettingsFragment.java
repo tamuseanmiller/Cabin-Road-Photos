@@ -65,7 +65,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         mDimming.setDefaultValue(preferencesManager.retrieveBoolean("preventDim", false));
         mBrightness = getPreferenceManager().findPreference("brightness");
         try {
-            mBrightness.setDefaultValue(Settings.System.getInt(cResolver, Settings.System.SCREEN_BRIGHTNESS));
+            mBrightness.setValue(Settings.System.getInt(cResolver, Settings.System.SCREEN_BRIGHTNESS));
         } catch (Settings.SettingNotFoundException e) {
             Log.e("Error", "Cannot access system brightness");
             e.printStackTrace();
@@ -75,16 +75,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         mAutoplaySpeed = getPreferenceManager().findPreference("autoplaySpeed");
         mAutoplaySpeed.setDefaultValue(preferencesManager.retrieveInt("autoplaySpeed", 20));
 
-        // Check to see if we have write settings
-        if (!Settings.System.canWrite(getActivity())) {
+//         Check to see if we have write settings
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1 && !Settings.System.canWrite(getActivity())) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
             intent.setData(Uri.parse("package:" + getActivity().getPackageName()));
             startActivity(intent);
         }
 
         mBrightness.setOnPreferenceChangeListener((preference, newValue) -> {
-            if (Settings.System.canWrite(getActivity())) {
-
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1 || Settings.System.canWrite(getActivity())) {
                 Settings.System.putInt(cResolver, Settings.System.SCREEN_BRIGHTNESS, (Integer) newValue);
                 //Get the current window attributes
                 WindowManager.LayoutParams layoutpars = window.getAttributes();
