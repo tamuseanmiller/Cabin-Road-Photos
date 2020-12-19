@@ -10,6 +10,9 @@ import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextClock;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
@@ -31,6 +34,7 @@ import com.google.photos.library.v1.proto.UpdateAlbumRequestOrBuilder;
 import com.google.photos.types.proto.MediaItem;
 import com.google.protobuf.CodedInputStream;
 import com.stfalcon.imageviewer.StfalconImageViewer;
+import com.stfalcon.imageviewer.listeners.OnImageChangeListener;
 import com.veinhorn.scrollgalleryview.MediaInfo;
 import com.veinhorn.scrollgalleryview.ScrollGalleryView;
 import com.veinhorn.scrollgalleryview.builder.GallerySettings;
@@ -163,9 +167,12 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                             .build();*/
 
 //                    hideSystemUI();
+                    LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
+                    final View overlayView= inflater2.inflate(R.layout.gallery_overlay, null);
                     stfalconImageViewer = new StfalconImageViewer.Builder<>(
                             getContext(), finalImages.get(), (imageView, image) ->
                             Glide.with(requireActivity()).load(image).into(imageView))
+                            .withOverlayView(overlayView)
 //                            .withDismissListener(() -> {
 //                                showSystemUI();
 //                            })
@@ -219,15 +226,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     @Override
     public void onItemClick(View view, int position) {
 //        hideSystemUI();
+
+        LayoutInflater inflater = LayoutInflater.from(view.getContext());
+        final View overlayView= inflater.inflate(R.layout.gallery_overlay, null);
+
         Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
-        StfalconImageViewer stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
+        new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
                 (imageView, image) -> Glide.with(requireActivity()).load(image).into(imageView))
 //                .withDismissListener(() -> {
 //                    showSystemUI();
 //                })
+                .withStartPosition(position)
+                .withOverlayView(overlayView)
                 .show();
 
-        stfalconImageViewer.setCurrentPosition(position);
     }
 
 //    private void hideSystemUI() {
