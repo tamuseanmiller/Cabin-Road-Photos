@@ -1,7 +1,9 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -31,10 +33,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
 
+import static com.rebeccamcfadden.cabinroadphotos.GalleryFragment.calculateNoOfColumns;
+
 public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums.ItemClickListener {
 
     private PhotosLibraryClient photosLibraryClient;
     private AtomicReference<List<Album>> albums;
+    private RecyclerViewAdapterAlbums albumAdapter;
+    private RecyclerView albumRecycler;
 
     public AlbumFragment() {
 
@@ -57,14 +63,15 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
 
             // Fetch albums
             albums = new AtomicReference<>(getAllAlbums());
-            RecyclerViewAdapterAlbums albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
-            RecyclerView albumRecycler = mView.findViewById(R.id.album_recycler);
+            albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
+            albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);
-            ColumnProvider col = () -> 7;
+            int numColumns = calculateNoOfColumns(getActivity(), 150);
+            ColumnProvider col = () -> numColumns;
 
             // Initialize Recylerview
             requireActivity().runOnUiThread(() -> {
-                albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), 7));
+                albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
                 albumRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
                 albumRecycler.setAdapter(albumAdapter);
 
@@ -142,13 +149,30 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
 
     }
 
-    private List<Album>getAllAlbums() {
+    // Changes number of columns based on orientation change
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (albumAdapter != null) {
+            int numColumns = calculateNoOfColumns(getActivity(), 150);
+            ColumnProvider col = () -> numColumns;
+            albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
+            albumRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
+            albumRecycler.setAdapter(albumAdapter);
+        }
+    }
+
+    // Adds both your albums and albums shared with you
+    private List<Album> getAllAlbums() {
         List<Album> preAlbum = new ArrayList<>();
+        List<String> IDs = new ArrayList<>();
         for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
             preAlbum.add(album);
+            IDs.add(album.getId());
         }
         for (Album album : photosLibraryClient.listSharedAlbums().iterateAll()) {
-            if(!preAlbum.contains(album)) preAlbum.add(album);
+            if (!IDs.contains(album.getId())) preAlbum.add(album);
         }
         Collections.sort(preAlbum, new Comparator<Album>() {
             @Override
@@ -157,7 +181,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
                     return 0;
                 } else if (album2.getTitle().isEmpty()) {
                     return -1;
-                } else if (album1.getTitle().isEmpty()){
+                } else if (album1.getTitle().isEmpty()) {
                     return 1;
                 }
                 return album1.getTitle().compareTo(album2.getTitle());

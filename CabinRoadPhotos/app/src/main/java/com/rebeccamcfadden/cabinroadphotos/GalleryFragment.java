@@ -1,10 +1,13 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -15,8 +18,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.*;
 
 import androidx.fragment.app.Fragment;
@@ -56,6 +61,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private StfalconImageViewer stfalconImageViewer;
     private AtomicReference<List<String>> finalImages;
     private int autoplayDuration;
+    private RecyclerView galleryRecycler;
+    private RecyclerViewAdapterGallery galleryAdapter;
     private String albumTitle;
 
     private Toolbar actionbar;
@@ -102,6 +109,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             Drawable drawable = ContextCompat.getDrawable(getActivity(), R.drawable.ic_arrow_back);
             drawable.setTint(ContextCompat.getColor(getActivity(), R.color.white));
             actionbar.setNavigationIcon(drawable);
+            actionbar.setTitle(albumTitle);
             actionbar.setNavigationOnClickListener(v -> {
                 actionbar.setNavigationIcon(null);
                 getActivity().onBackPressed();
@@ -109,7 +117,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         }
 
         Thread thread = new Thread(() -> {
-            ((TextView) mView.findViewById(R.id.album_title)).setText(albumTitle);
+//            ((TextView) mView.findViewById(R.id.album_title)).setText(albumTitle);
             SwipeRefreshLayout refreshGallery = mView.findViewById(R.id.refresh_gallery);
             requireActivity().runOnUiThread(() -> refreshGallery.setRefreshing(true));
 
@@ -128,12 +136,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
 
             // Initialize RecyclerView
-            RecyclerViewAdapterGallery galleryAdapter = new RecyclerViewAdapterGallery(getContext(), finalImages.get());
+            galleryAdapter = new RecyclerViewAdapterGallery(getContext(), finalImages.get());
             galleryAdapter.setClickListener(this);
             requireActivity().runOnUiThread(() -> {
-                RecyclerView galleryRecycler = mView.findViewById(R.id.gallery_recycler);
-                ColumnProvider col = () -> 10;
-                galleryRecycler.setLayoutManager(new GridLayoutManager(getActivity(), 10));
+                galleryRecycler = mView.findViewById(R.id.gallery_recycler);
+
+                int numColumns = calculateNoOfColumns(getActivity(), 100);
+
+                ColumnProvider col = () -> numColumns;
+                galleryRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
                 galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
                 galleryRecycler.setAdapter(galleryAdapter);
             });
@@ -168,7 +179,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
 //                    hideSystemUI();
                     LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
-                    final View overlayView= inflater2.inflate(R.layout.gallery_overlay, null);
+                    final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
                     stfalconImageViewer = new StfalconImageViewer.Builder<>(
                             getContext(), finalImages.get(), (imageView, image) ->
                             Glide.with(requireActivity()).load(image).into(imageView))
@@ -228,7 +239,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 //        hideSystemUI();
 
         LayoutInflater inflater = LayoutInflater.from(view.getContext());
-        final View overlayView= inflater.inflate(R.layout.gallery_overlay, null);
+        final View overlayView = inflater.inflate(R.layout.gallery_overlay, null);
 
         Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
         new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
@@ -240,6 +251,29 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 .withOverlayView(overlayView)
                 .show();
 
+    }
+
+    // Changes number of columns based on orientation change
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (galleryAdapter != null) {
+            int numColumns = calculateNoOfColumns(getActivity(), 100);
+            ColumnProvider col = () -> numColumns;
+            galleryRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
+            galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
+            galleryRecycler.setAdapter(galleryAdapter);
+        }
+
+    }
+
+    // To determine number of columns necessary for GridLayoutManager
+    public static int calculateNoOfColumns(Context context, float columnWidthDp) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        float screenWidthDp = displayMetrics.widthPixels / displayMetrics.density;
+        int noOfColumns = (int) (screenWidthDp / columnWidthDp + 0.5); // +0.5 for correct rounding to int.
+        return noOfColumns - 1;
     }
 
 //    private void hideSystemUI() {
@@ -268,5 +302,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     public void setAlbumTitle(String title) {
         this.albumTitle = title;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+
+        try {
+            Fragment fragment = getActivity().getSupportFragmentManager().findFragmentByTag("album_fragment");
+            FragmentTransaction ft = getActivity().getSupportFragmentManager()
+                    .beginTransaction();
+            ft.remove(fragment);
+            ft.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
