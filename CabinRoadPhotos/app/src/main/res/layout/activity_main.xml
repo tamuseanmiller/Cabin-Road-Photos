@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:theme="@style/Theme.CabinRoadPhotos.NoActionBar"
     tools:context=".MainActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -15,7 +14,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
-        android:theme="@style/Theme.CabinRoadPhotos"
+        android:theme="@style/Theme.CabinRoadPhotos.NoActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:title="Cabin Road Photos"
         app:titleTextColor="@color/white" />
