@@ -20,6 +20,8 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.*;
 
 import java.net.URISyntaxException;
@@ -115,5 +117,23 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return true;
         });
         return mView;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        try {
+            Fragment fragment = getActivity().getSupportFragmentManager().findFragmentByTag("settings_fragment");
+            FragmentTransaction ft = getActivity().getSupportFragmentManager()
+                    .beginTransaction();
+            ft.remove(fragment);
+            if(getActivity().getSupportFragmentManager().findFragmentByTag("gallery_fragment") != null) {
+                ft.show(getActivity().getSupportFragmentManager().findFragmentByTag("gallery_fragment"));
+                ft.hide(getActivity().getSupportFragmentManager().findFragmentByTag("album_fragment"));
+            }
+            ft.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

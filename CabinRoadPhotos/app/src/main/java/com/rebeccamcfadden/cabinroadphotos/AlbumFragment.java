@@ -148,7 +148,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         FragmentManager transaction = getActivity().getSupportFragmentManager();
         transaction.beginTransaction()
                 .hide(this)
-                .add(R.id.main_layout, galleryFragment) //<---replace a view in your layout (id: container) with the newFragment
+                .add(R.id.main_layout, galleryFragment, "gallery_fragment") //<---replace a view in your layout (id: container) with the newFragment
                 .addToBackStack(null)
                 .commit();
 

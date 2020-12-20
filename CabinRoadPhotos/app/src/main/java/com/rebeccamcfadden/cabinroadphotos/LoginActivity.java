@@ -19,11 +19,14 @@ import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
@@ -46,7 +49,7 @@ public class LoginActivity extends AppCompatActivity {
         // Create Sign in options for photos access and device code and idtoken
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(Properties.getWebAPIKey())
-                .requestServerAuthCode(Properties.getWebAPIKey())
+                .requestServerAuthCode(Properties.getWebAPIKey(), false)
                 .requestEmail()
                 .requestScopes(new Scope("https://www.googleapis.com/auth/photoslibrary"))
                 .build();
@@ -60,6 +63,13 @@ public class LoginActivity extends AppCompatActivity {
         if (account != null) {
 //            Don't reach this page
 //            firebaseAuthWithGoogle(account.getIdToken());
+
+            Intent intent = new Intent(this, MainActivity.class);
+
+            // Add idToken to intent then start
+            intent.putExtra("idToken", account.getIdToken());
+            startActivity(intent);
+            finish();
         }
 
         // On Click Listener for login

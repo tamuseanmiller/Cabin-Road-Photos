@@ -351,20 +351,4 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         }
         mContext = null;
     }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        actionbar.setTitle("Cabin Road Photos");
-
-        try {
-            Fragment fragment = mContext.getSupportFragmentManager().findFragmentByTag("gallery_fragment");
-            FragmentTransaction ft = mContext.getSupportFragmentManager()
-                    .beginTransaction();
-            ft.remove(fragment);
-            ft.commit();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

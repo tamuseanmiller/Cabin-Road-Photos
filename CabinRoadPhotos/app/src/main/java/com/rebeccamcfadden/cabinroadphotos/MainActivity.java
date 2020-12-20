@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private Thread t1;
     private String idToken;
     private GoogleSignInOptions gso;
+    private AlbumFragment albumFragment;
 
     private Toolbar toolbar;
 
@@ -85,14 +86,12 @@ public class MainActivity extends AppCompatActivity {
                 .requestScopes(new Scope("https://www.googleapis.com/auth/photoslibrary"))
                 .build();
 
-        getAccessToken();
-
         // Photos access thread
         t1 = new Thread(() -> {
 
             getPhotosLibrary();
 
-            AlbumFragment albumFragment = new AlbumFragment();
+            albumFragment = new AlbumFragment();
             albumFragment.setPhotosLibraryClient(photosLibraryClient);
             FragmentManager transaction = getSupportFragmentManager();
             transaction.beginTransaction()
@@ -100,6 +99,27 @@ public class MainActivity extends AppCompatActivity {
                     .addToBackStack(null)
                     .commit();
         });
+
+        // Check if we have a refresh token, if we do then we can
+        // retrieve an access token without caliing getAccessToken()
+        if (new SharedPreferencesManager(getApplicationContext()).retrieveString("refresh_token", "NULL").equals("NULL")) {
+            getAccessToken();
+
+        } else {
+
+            // Create access token builder
+            UserCredentials creds = UserCredentials.newBuilder()
+                    .setClientId(Properties.getWebAPIKey())
+                    .setClientSecret(Properties.getWebSecretKey())
+                    .setRefreshToken(new SharedPreferencesManager(getApplicationContext()).retrieveString("refresh_token", "NULL"))
+                    .build();
+            try {
+                accessToken = creds.refreshAccessToken().getTokenValue();
+                t1.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
     }
 
@@ -160,7 +180,12 @@ public class MainActivity extends AppCompatActivity {
                     // Log response
                     JSONObject jsonObject = new JSONObject(response.body().string());
                     final String message = jsonObject.toString(5);
-                    accessToken = jsonObject.get("access_token").toString();
+                    if (jsonObject.getString("refresh_token") != null) {
+                        new SharedPreferencesManager(getApplicationContext()).storeString("refresh_token", jsonObject.getString("refresh_token"));
+                    }
+                    if (jsonObject.get("access_token") != null) {
+                        accessToken = jsonObject.get("access_token").toString();
+                    }
                     Log.i("Auth", message);
                     t1.start();
 
@@ -198,10 +223,23 @@ public class MainActivity extends AppCompatActivity {
             case R.id.settings:
                 SettingsFragment settingsFragment = new SettingsFragment();
                 FragmentManager transaction = getSupportFragmentManager();
-                transaction.beginTransaction()
-                        .add(R.id.main_layout, settingsFragment) //<---replace a view in your layout (id: container) with the newFragment
-                        .addToBackStack(MainActivity.class.getName())
-                        .commit();
+
+                if (getSupportFragmentManager().findFragmentByTag("gallery_fragment") != null) {
+                    transaction.beginTransaction()
+//                        .hide(getSupportFragmentManager().getFragments().get(getSupportFragmentManager().getFragments().size() - 2))
+                            .hide(albumFragment)
+                            .hide(getSupportFragmentManager().findFragmentByTag("gallery_fragment"))
+                            .replace(R.id.main_layout, settingsFragment, "settings_fragment") //<---replace a view in your layout (id: container) with the newFragment
+                            .addToBackStack(null)
+                            .commit();
+                } else {
+                    transaction.beginTransaction()
+//                        .hide(getSupportFragmentManager().getFragments().get(getSupportFragmentManager().getFragments().size() - 2))
+                            .hide(albumFragment)
+                            .add(R.id.main_layout, settingsFragment, "settings_fragment") //<---replace a view in your layout (id: container) with the newFragment
+                            .addToBackStack(null)
+                            .commit();
+                }
 
                 return true;
             case R.id.sign_out:
