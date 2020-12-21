@@ -142,7 +142,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
             // Initialize RecyclerView
             if (mContext != null) {
-                galleryAdapter = new RecyclerViewAdapterGallery(getContext(), finalImages.get());
+                galleryAdapter = new RecyclerViewAdapterGallery(mContext, finalImages.get());
                 galleryAdapter.setClickListener(this);
                 if (mContext != null)
                     mContext.runOnUiThread(() -> {
@@ -295,7 +295,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         t3.start();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PICK_IMAGE) {
@@ -429,7 +428,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                         PackageManager.PERMISSION_GRANTED) {
                     Intent intent = new Intent(Intent.ACTION_PICK,
                             MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-                    intent.setType("image/*");
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                     intent.setAction(Intent.ACTION_PICK);
                     startActivityForResult(Intent.createChooser(intent,
@@ -517,15 +515,5 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         super.onDetach();
         actionbar.setTitle("Cabin Road Photos");
         actionbar.setNavigationIcon(null);
-        try {
-            Fragment fragment = mContext.getSupportFragmentManager().findFragmentByTag("gallery_fragment");
-            FragmentTransaction ft = mContext.getSupportFragmentManager()
-                    .beginTransaction();
-            ft.remove(fragment);
-            ft.commit();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        mContext = null;
     }
 }

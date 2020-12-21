@@ -38,16 +38,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     //Window object, that will store a reference to the current window
     private Window window;
     private SharedPreferencesManager preferencesManager;
-
+    private String oldTitle;
+    private Toolbar actionbar;
+    private boolean hasNavigation;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         preferencesManager = new SharedPreferencesManager(getContext());
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
         //Get the content resolver
-        cResolver = getActivity().getContentResolver();
+        cResolver = requireActivity().getContentResolver();
         //Get the current window
-        window = getActivity().getWindow();
+        window = requireActivity().getWindow();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -55,16 +57,23 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View mView = super.onCreateView(inflater, container, savedInstanceState);
 
-        Toolbar actionbar = requireActivity().findViewById(R.id.toolbar_main);
+        actionbar = requireActivity().findViewById(R.id.toolbar_main);
         if (actionbar != null) {
             Log.d("debug", "action bar was non null");
-            Drawable drawable = ContextCompat.getDrawable(getActivity(), R.drawable.ic_arrow_back);
+            if (actionbar.getNavigationIcon() == null) {
+                hasNavigation = false;
+            } else {
+                hasNavigation = true;
+            }
+            Drawable drawable = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_arrow_back);
             drawable.setTint(ContextCompat.getColor(getActivity(), R.color.white));
             actionbar.setNavigationIcon(drawable);
             actionbar.setNavigationOnClickListener(v -> {
                 actionbar.setNavigationIcon(null);
                 getActivity().onBackPressed();
             });
+            oldTitle = actionbar.getTitle().toString();
+            actionbar.setTitle("Settings");
         }
 
         mDimming = getPreferenceManager().findPreference("preventDim");
@@ -84,22 +93,22 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 //         Check to see if we have write settings
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1 && !Settings.System.canWrite(getActivity())) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-            intent.setData(Uri.parse("package:" + getActivity().getPackageName()));
+            intent.setData(Uri.parse("package:" + requireActivity().getPackageName()));
             startActivity(intent);
         }
 
         mBrightness.setOnPreferenceChangeListener((preference, newValue) -> {
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1 || Settings.System.canWrite(getActivity())) {
                 Settings.System.putInt(cResolver, Settings.System.SCREEN_BRIGHTNESS, (Integer) newValue);
-                //Get the current window attributes
+                // Get the current window attributes
                 WindowManager.LayoutParams layoutpars = window.getAttributes();
-                //Set the brightness of this window
+                // Set the brightness of this window
                 layoutpars.screenBrightness = ((Integer) newValue) / (float) 255;
-                //Apply attribute changes to this window
+                // Apply attribute changes to this window
                 window.setAttributes(layoutpars);
             } else {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-                intent.setData(Uri.parse("package:" + getActivity().getPackageName()));
+                intent.setData(Uri.parse("package:" + requireActivity().getPackageName()));
                 startActivity(intent);
             }
             return true;
@@ -121,6 +130,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onDetach() {
+        actionbar.setTitle(oldTitle);
+        if (!hasNavigation) {
+            actionbar.setNavigationIcon(null);
+        }
         super.onDetach();
     }
 }
