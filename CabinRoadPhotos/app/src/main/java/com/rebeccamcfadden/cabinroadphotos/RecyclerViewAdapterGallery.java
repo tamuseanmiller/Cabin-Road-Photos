@@ -39,7 +39,7 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterGallery.ViewHolder holder, int position) {
-        if (position != 0) {
+        if (!mData.get(position).equals("ADDIMAGEPICTURE")) {
             Glide.with(holder.galleryImage.getContext()).load(mData.get(position)).into(holder.galleryImage);
             holder.galleryImageCard.setElevation(1);
 
