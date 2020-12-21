@@ -29,6 +29,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -45,6 +46,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.shape.CornerFamily;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
 import com.google.photos.library.v1.proto.Filters;
@@ -216,13 +219,28 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                         LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
                         final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
+
+                        AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
+                        AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
+                        goLeft.setVisibility(View.VISIBLE);
+                        goRight.setVisibility(View.VISIBLE);
+
+                        goRight.setOnClickListener(y -> {
+                            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
+                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+                            }
+                        });
+
+                        goLeft.setOnClickListener(y -> {
+                            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+                            }
+                        });
+
                         stfalconImageViewer = new StfalconImageViewer.Builder<>(
-                                getContext(), finalImages.get(), (imageView, image) ->
+                                getContext(), finalImages.get().subList(1, finalImages.get().size() - 1), (imageView, image) ->
                                 Glide.with(mContext).load(image).into(imageView))
                                 .withOverlayView(overlayView)
-                                //                            .withDismissListener(() -> {
-                                //                                showSystemUI();
-                                //                            })
                                 .show();
                         stfalconImageViewer.setCurrentPosition(1);
 
@@ -381,14 +399,28 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             LayoutInflater inflater = LayoutInflater.from(view.getContext());
             final View overlayView = inflater.inflate(R.layout.gallery_overlay, null);
 
+            AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
+            AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
+            goLeft.setVisibility(View.VISIBLE);
+            goRight.setVisibility(View.VISIBLE);
+
+            goRight.setOnClickListener(y -> {
+                if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
+                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+                }
+            });
+
+            goLeft.setOnClickListener(y -> {
+                if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+                }
+            });
+
             Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
-            new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
+            stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), finalImages.get().subList(1, finalImages.get().size() - 1),
                     (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
-//                .withDismissListener(() -> {
-//                    showSystemUI();
-//                })
-                    .withStartPosition(position)
                     .withOverlayView(overlayView)
+                    .withStartPosition(position - 1)
                     .show();
 
         }
