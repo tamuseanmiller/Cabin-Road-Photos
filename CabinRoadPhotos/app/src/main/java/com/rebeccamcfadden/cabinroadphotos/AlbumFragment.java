@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,20 +36,16 @@ import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
 
 import static com.rebeccamcfadden.cabinroadphotos.GalleryFragment.calculateNoOfColumns;
+import static com.rebeccamcfadden.cabinroadphotos.MainActivity.photosLibraryClient;
 
 public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums.ItemClickListener {
 
-    private PhotosLibraryClient photosLibraryClient;
     private AtomicReference<List<Album>> albums;
     private RecyclerViewAdapterAlbums albumAdapter;
     private RecyclerView albumRecycler;
 
     public AlbumFragment() {
 
-    }
-
-    public void setPhotosLibraryClient(PhotosLibraryClient photosLibraryClient) {
-        this.photosLibraryClient = photosLibraryClient;
     }
 
     @Override
@@ -135,6 +132,8 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
         });
 
+        //
+
         return mView;
     }
 
@@ -142,10 +141,9 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
     @Override
     public void onItemClick(View view, int position) {
         GalleryFragment galleryFragment = new GalleryFragment();
-        galleryFragment.setPhotosLibraryClient(photosLibraryClient);
         galleryFragment.setAlbumId(albums.get().get(position).getId());
         galleryFragment.setAlbumTitle(albums.get().get(position).getTitle());
-        FragmentManager transaction = getActivity().getSupportFragmentManager();
+        FragmentManager transaction = requireActivity().getSupportFragmentManager();
         transaction.beginTransaction()
                 .hide(this)
                 .add(R.id.main_layout, galleryFragment, "gallery_fragment") //<---replace a view in your layout (id: container) with the newFragment
@@ -160,7 +158,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         super.onConfigurationChanged(newConfig);
 
         if (albumAdapter != null) {
-            int numColumns = calculateNoOfColumns(getActivity(), 150);
+            int numColumns = calculateNoOfColumns(requireActivity(), 150);
             ColumnProvider col = () -> numColumns;
             albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
             albumRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));

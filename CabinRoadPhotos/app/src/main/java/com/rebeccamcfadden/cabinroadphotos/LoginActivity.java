@@ -35,27 +35,10 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleSignInClient mGoogleSignInClient;
     private GoogleSignInAccount account;
 
-    private Toolbar toolbar;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
-        // Toolbar customization
-        toolbar = findViewById(R.id.toolbar_login);
-        setSupportActionBar(toolbar);
-
-        // Create Sign in options for photos access and device code and idtoken
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(Properties.getWebAPIKey())
-                .requestServerAuthCode(Properties.getWebAPIKey(), true)
-                .requestEmail()
-                .requestScopes(new Scope("https://www.googleapis.com/auth/photoslibrary"))
-                .build();
-
-        // Build a GoogleSignInClient with the options specified by gso.
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         // Check for existing Google Sign In account, if the user is already signed in
         // the GoogleSignInAccount will be non-null.
@@ -71,6 +54,21 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
+
+        // Toolbar customization
+        Toolbar toolbar = findViewById(R.id.toolbar_login);
+        setSupportActionBar(toolbar);
+
+        // Create Sign in options for photos access and device code and idtoken
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(Properties.getWebAPIKey())
+                .requestServerAuthCode(Properties.getWebAPIKey(), true)
+                .requestEmail()
+                .requestScopes(new Scope("https://www.googleapis.com/auth/photoslibrary"))
+                .build();
+
+        // Build a GoogleSignInClient with the options specified by gso.
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         // On Click Listener for login
         MaterialButton signInButton = findViewById(R.id.sign_in_button);

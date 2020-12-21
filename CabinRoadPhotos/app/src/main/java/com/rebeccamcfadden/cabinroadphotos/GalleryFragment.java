@@ -51,6 +51,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
+import com.stfalcon.imageviewer.listeners.OnDismissListener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -63,10 +64,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
 
+import static com.rebeccamcfadden.cabinroadphotos.MainActivity.photosLibraryClient;
+
 public class GalleryFragment extends Fragment implements RecyclerViewAdapterGallery.ItemClickListener {
 
     private static final int PICK_IMAGE = 1;
-    private PhotosLibraryClient photosLibraryClient;
     private String albumID;
     private StfalconImageViewer stfalconImageViewer;
     private AtomicReference<List<String>> finalImages;
@@ -83,11 +85,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     public GalleryFragment() {
         albumID = null;
-        photosLibraryClient = null;
-    }
-
-    public void setPhotosLibraryClient(PhotosLibraryClient photosLibraryClient) {
-        this.photosLibraryClient = photosLibraryClient;
     }
 
     public void setAlbumId(String albumId) {
@@ -155,13 +152,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                         ColumnProvider col = () -> numColumns;
                         galleryRecycler.setLayoutManager(new GridLayoutManager(mContext, numColumns));
-                        galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
+                        galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col,
+                                GridLayoutManager.VERTICAL, false, null));
                         galleryRecycler.setAdapter(galleryAdapter);
                     });
             }
 
             // Set start slideshow functionality
-            ExtendedFloatingActionButton startSlideshowButton = mView.findViewById(R.id.start_slideshow_button);
+            ExtendedFloatingActionButton startSlideshowButton =
+                    mView.findViewById(R.id.start_slideshow_button);
             if (mContext != null)
                 mContext.runOnUiThread(() -> {
                     startSlideshowButton.setOnClickListener(v -> {
@@ -213,44 +212,45 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                             }
                         });
 
+                        // Build image viewer
                         stfalconImageViewer = new StfalconImageViewer.Builder<>(
-                                getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size()) : finalImages.get(), (imageView, image) ->
+                                getContext(), isWriteable ? finalImages.get().subList(1,
+                                finalImages.get().size()) : finalImages.get(), (imageView, image) ->
                                 Glide.with(mContext).load(image).into(imageView))
                                 .withOverlayView(overlayView)
+                                .withDismissListener(() -> stfalconImageViewer = null)
                                 .show();
 
-                        // Add upload offset if album is writeable
-                        if (isWriteable) {
-                            stfalconImageViewer.setCurrentPosition(1);
-                        }
+                        // Start Slideshow Thread
+                        Thread t2 = new Thread(() -> {
+
+                            // Traverse full album
+                            while (true) {
+                                try {
+                                    // Sleep for x minutes, then switch picture
+                                    Thread.sleep(autoplayDuration * 1000);
+                                    if (mContext != null && stfalconImageViewer != null) {
+                                        if (stfalconImageViewer.currentPosition() + 2 < finalImages.get().size()) {
+                                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(
+                                                    stfalconImageViewer.currentPosition() + 1));
+                                        } else {
+                                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(0));
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                        t2.start();
 
                     });
                 });
 
             // Swipe Refresh Actions
             refreshGallery.setOnRefreshListener(this::onRefresh);
-
-            // Start slideshow
-            Thread t2 = new Thread(() -> {
-                int cnt = 0;
-
-                // Traverse full album
-                while (cnt <= finalImages.get().size()) {
-                    if (stfalconImageViewer != null) {
-                        int finalCnt = cnt;
-                        if (mContext != null)
-                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalCnt));
-                        cnt++;
-                    }
-                    try {
-                        // Sleep for 5 minutes
-                        Thread.sleep(autoplayDuration * 1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-            t2.start();
 
             if (mContext != null)
                 mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
@@ -317,7 +317,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                             String file_extn = pathToFile.substring(pathToFile.lastIndexOf(".") + 1);
 
-                            if (file_extn.equals("img") || file_extn.equals("jpg") || file_extn.equals("jpeg") || file_extn.equals("gif") || file_extn.equals("png")) {
+                            if (file_extn.equals("img") || file_extn.equals("jpg") ||
+                                    file_extn.equals("jpeg") || file_extn.equals("gif") ||
+                                    file_extn.equals("png")) {
                                 //FINE
                                 Log.v("Upload", "Valid File Extension");
 
@@ -366,8 +368,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                             // Create new media items in a specific album
                             if (!newItems.isEmpty()) {
-                                BatchCreateMediaItemsResponse response = photosLibraryClient.batchCreateMediaItems(albumID, newItems);
-                                for (NewMediaItemResult itemsResponse : response.getNewMediaItemResultsList()) {
+                                BatchCreateMediaItemsResponse response =
+                                        photosLibraryClient.batchCreateMediaItems(albumID, newItems);
+                                for (NewMediaItemResult itemsResponse :
+                                        response.getNewMediaItemResultsList()) {
                                     Status status = itemsResponse.getStatus();
                                     if (status.getCode() == Code.OK_VALUE) {
                                         // The item is successfully created in the user's library
@@ -393,7 +397,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     public String getImageFilePath(Uri uri) {
         String result = null;
         String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = mContext.getContentResolver().query(uri, proj, null, null, null);
+        Cursor cursor = mContext.getContentResolver().query(uri, proj, null,
+                null, null);
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 int column_index = cursor.getColumnIndexOrThrow(proj[0]);
@@ -407,19 +412,28 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return result;
     }
 
+    // When an image is clicked
     @Override
     public void onItemClick(View view, int position) {
 
         if (galleryAdapter.getItem(position).equals("ADDIMAGEPICTURE")) {
             try {
-                ActivityCompat.requestPermissions((Activity) mContext, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                // Check if we have permission to read images from storage
+                ActivityCompat.requestPermissions(mContext, new
+                                String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         1);
-                if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                    Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+
+                // If permission was granted
+                if (ActivityCompat.checkSelfPermission(mContext,
+                        Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                        PackageManager.PERMISSION_GRANTED) {
+                    Intent intent = new Intent(Intent.ACTION_PICK,
+                            MediaStore.Images.Media.INTERNAL_CONTENT_URI);
                     intent.setType("image/*");
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                     intent.setAction(Intent.ACTION_PICK);
-                    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+                    startActivityForResult(Intent.createChooser(intent,
+                            "Select Picture"), PICK_IMAGE);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -427,6 +441,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
 
         } else {
+
+            // Open Full screen image view and set overlay button clicks
             LayoutInflater inflater = LayoutInflater.from(view.getContext());
             final View overlayView = inflater.inflate(R.layout.gallery_overlay, null);
 
@@ -448,7 +464,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             });
 
             Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
-            stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size()) : finalImages.get(),
+            stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), isWriteable ?
+                    finalImages.get().subList(1, finalImages.get().size()) : finalImages.get(),
                     (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
                     .withOverlayView(overlayView)
                     .withStartPosition(isWriteable ? position - 1 : position)
@@ -467,7 +484,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             int numColumns = calculateNoOfColumns(mContext, 100);
             ColumnProvider col = () -> numColumns;
             galleryRecycler.setLayoutManager(new GridLayoutManager(mContext, numColumns));
-            galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
+            galleryRecycler.addItemDecoration(new GridMarginDecoration(0, col,
+                    GridLayoutManager.VERTICAL, false, null));
             galleryRecycler.setAdapter(galleryAdapter);
         }
 

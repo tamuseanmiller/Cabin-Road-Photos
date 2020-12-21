@@ -52,18 +52,18 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
 
     public static String accessToken;
-    private PhotosLibraryClient photosLibraryClient;
+    public static PhotosLibraryClient photosLibraryClient;
     private Thread t1;
     private String idToken;
     private GoogleSignInOptions gso;
     private AlbumFragment albumFragment;
-
-    private Toolbar toolbar;
+    private SharedPreferencesManager prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,11 +72,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize
+        prefs = new SharedPreferencesManager(getApplicationContext());
         Intent intent = getIntent();
         idToken = intent.getStringExtra("idToken");
 
         // Toolbar customization
-        toolbar = findViewById(R.id.toolbar_main);
+        Toolbar toolbar = findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
 
         // Sign in Options
@@ -93,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
             getPhotosLibrary();
 
             albumFragment = new AlbumFragment();
-            albumFragment.setPhotosLibraryClient(photosLibraryClient);
             FragmentManager transaction = getSupportFragmentManager();
             transaction.beginTransaction()
                     .replace(R.id.main_layout, albumFragment) //<---replace a view in your layout (id: container) with the newFragment
@@ -103,25 +104,43 @@ public class MainActivity extends AppCompatActivity {
 
         // Check if we have a refresh token, if we do then we can
         // retrieve an access token without caliing getAccessToken()
-        if (new SharedPreferencesManager(getApplicationContext()).retrieveString("refresh_token", "NULL").equals("NULL")) {
+        if (prefs.retrieveString("refresh_token", "NULL").equals("NULL")) {
             getAccessToken();
 
         } else {
+            getAccessTokenFromRefreshToken();
 
-            // Create access token builder
-            UserCredentials creds = UserCredentials.newBuilder()
-                    .setClientId(Properties.getWebAPIKey())
-                    .setClientSecret(Properties.getWebSecretKey())
-                    .setRefreshToken(new SharedPreferencesManager(getApplicationContext()).retrieveString("refresh_token", "NULL"))
-                    .build();
-            try {
-                accessToken = creds.refreshAccessToken().getTokenValue();
-                t1.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
+        // Auto-refresh ever 45 minutes
+        Thread thread = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(2700000);
+                    getAccessTokenFromRefreshToken();
+                    getPhotosLibrary();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+
+    }
+
+    private void getAccessTokenFromRefreshToken() {
+        // Create access token builder
+        UserCredentials creds = UserCredentials.newBuilder()
+                .setClientId(Properties.getWebAPIKey())
+                .setClientSecret(Properties.getWebSecretKey())
+                .setRefreshToken(prefs.retrieveString("refresh_token", "NULL"))
+                .build();
+        try {
+            accessToken = creds.refreshAccessToken().getTokenValue();
+            t1.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getPhotosLibrary() {
@@ -147,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
             photosLibraryClient = PhotosLibraryClient.initialize(settings);
 
         } catch (IOException e) {
-
+            e.printStackTrace();
         }
     }
 
@@ -159,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                 .add("client_id", Properties.getWebAPIKey())   // something like : ...apps.googleusercontent.com
                 .add("client_secret", Properties.getWebSecretKey())
                 .add("redirect_uri", "")
-                .add("code", new SharedPreferencesManager(getApplicationContext()).retrieveString("code", "NULL") /*LoginActivity.getAccount().getServerAuthCode()*/) // device code.
+                .add("code", prefs.retrieveString("code", "NULL") /*LoginActivity.getAccount().getServerAuthCode()*/) // device code.
                 .add("id_token", idToken) // This is what we received in Step 5, the jwt token.
                 .build();
 
@@ -182,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(response.body().string());
                     final String message = jsonObject.toString(5);
                     if (jsonObject.getString("refresh_token") != null) {
-                        new SharedPreferencesManager(getApplicationContext()).storeString("refresh_token", jsonObject.getString("refresh_token"));
+                        prefs.storeString("refresh_token", jsonObject.getString("refresh_token"));
                     }
                     if (jsonObject.get("access_token") != null) {
                         accessToken = jsonObject.get("access_token").toString();
@@ -229,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
                     transaction.beginTransaction()
 //                        .hide(getSupportFragmentManager().getFragments().get(getSupportFragmentManager().getFragments().size() - 2))
                             .hide(albumFragment)
-                            .hide(getSupportFragmentManager().findFragmentByTag("gallery_fragment"))
+                            .hide(Objects.requireNonNull(getSupportFragmentManager().findFragmentByTag("gallery_fragment")))
                             .replace(R.id.main_layout, settingsFragment, "settings_fragment") //<---replace a view in your layout (id: container) with the newFragment
                             .addToBackStack(null)
                             .commit();
@@ -248,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
                 GoogleSignIn.getClient(this, gso).signOut();
                 Intent intent = new Intent(this, LoginActivity.class);
                 startActivity(intent);
-                new SharedPreferencesManager(this).storeString("refresh_token", "NULL");
+                prefs.storeString("refresh_token", "NULL");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
