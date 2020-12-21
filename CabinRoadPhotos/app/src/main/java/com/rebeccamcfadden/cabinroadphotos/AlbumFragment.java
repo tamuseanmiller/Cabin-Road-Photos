@@ -132,7 +132,18 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
         });
 
-        //
+        // Auto refresh albums every 45 minutes
+        Thread t2 = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(2700000);
+                    refreshAlbums();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t2.start();
 
         return mView;
     }

@@ -189,62 +189,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                                 .build();*/
 
                         //                    hideSystemUI();
-
-                        LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
-                        final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
-
-                        AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
-                        AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
-                        goLeft.setVisibility(View.VISIBLE);
-                        goRight.setVisibility(View.VISIBLE);
-
-                        // If right chevron is clicked
-                        goRight.setOnClickListener(y -> {
-                            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
-                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
-                            }
-                        });
-
-                        // If left chevron is clicked
-                        goLeft.setOnClickListener(y -> {
-                            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
-                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
-                            }
-                        });
-
-                        // Build image viewer
-                        stfalconImageViewer = new StfalconImageViewer.Builder<>(
-                                getContext(), isWriteable ? finalImages.get().subList(1,
-                                finalImages.get().size()) : finalImages.get(), (imageView, image) ->
-                                Glide.with(mContext).load(image).into(imageView))
-                                .withOverlayView(overlayView)
-                                .withDismissListener(() -> stfalconImageViewer = null)
-                                .show();
-
-                        // Start Slideshow Thread
-                        Thread t2 = new Thread(() -> {
-
-                            // Traverse full album
-                            while (true) {
-                                try {
-                                    // Sleep for x minutes, then switch picture
-                                    Thread.sleep(autoplayDuration * 1000);
-                                    if (mContext != null && stfalconImageViewer != null) {
-                                        if (stfalconImageViewer.currentPosition() + 2 < finalImages.get().size()) {
-                                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(
-                                                    stfalconImageViewer.currentPosition() + 1));
-                                        } else {
-                                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(0));
-                                        }
-                                    } else {
-                                        break;
-                                    }
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                        t2.start();
+                        startSlideshow(0);
 
                     });
                 });
@@ -260,8 +205,86 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         if (mContext != null)
             thread.start();
 
+        // Auto refresh images every 45 minutes
+        Thread t3 = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(2700000);
+                    onRefresh();
+
+                    // Check if slideshow is happening
+                    if (stfalconImageViewer != null) {
+                        startSlideshow(stfalconImageViewer.currentPosition());
+                    }
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t3.start();
 
         return mView;
+    }
+
+    private void startSlideshow(int position) {
+        LayoutInflater inflater2 = LayoutInflater.from(mContext);
+        final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
+
+        AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
+        AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
+        goLeft.setVisibility(View.VISIBLE);
+        goRight.setVisibility(View.VISIBLE);
+
+        // If right chevron is clicked
+        goRight.setOnClickListener(y -> {
+            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
+                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+            }
+        });
+
+        // If left chevron is clicked
+        goLeft.setOnClickListener(y -> {
+            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+            }
+        });
+
+        // Build image viewer
+        stfalconImageViewer = new StfalconImageViewer.Builder<>(
+                getContext(), isWriteable ? finalImages.get().subList(1,
+                finalImages.get().size()) : finalImages.get(), (imageView, image) ->
+                Glide.with(mContext).load(image).into(imageView))
+                .withOverlayView(overlayView)
+                .withDismissListener(() -> stfalconImageViewer = null)
+                .show();
+
+        stfalconImageViewer.setCurrentPosition(position);
+
+        // Start Slideshow Thread
+        Thread t2 = new Thread(() -> {
+
+            // Traverse full album
+            while (true) {
+                try {
+                    // Sleep for x minutes, then switch picture
+                    Thread.sleep(autoplayDuration * 1000);
+                    if (mContext != null && stfalconImageViewer != null) {
+                        if (stfalconImageViewer.currentPosition() + 2 < finalImages.get().size()) {
+                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(
+                                    stfalconImageViewer.currentPosition() + 1));
+                        } else {
+                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(0));
+                        }
+                    } else {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t2.start();
     }
 
     // When refresh is called

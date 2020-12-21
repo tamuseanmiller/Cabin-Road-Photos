@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        // Auto-refresh ever 45 minutes
+        // Auto-refresh every 45 minutes
         Thread thread = new Thread(() -> {
             while (true) {
                 try {
