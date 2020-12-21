@@ -1,13 +1,20 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,9 +27,11 @@ import android.widget.TextClock;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.*;
@@ -34,20 +43,33 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.photos.library.v1.PhotosLibraryClient;
+import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
 import com.google.photos.library.v1.proto.Filters;
+import com.google.photos.library.v1.proto.NewMediaItem;
+import com.google.photos.library.v1.proto.NewMediaItemResult;
 import com.google.photos.library.v1.proto.UpdateAlbumRequest;
 import com.google.photos.library.v1.proto.UpdateAlbumRequestOrBuilder;
+import com.google.photos.library.v1.upload.UploadMediaItemRequest;
+import com.google.photos.library.v1.upload.UploadMediaItemResponse;
+import com.google.photos.library.v1.util.NewMediaItemFactory;
 import com.google.photos.types.proto.MediaItem;
 import com.google.protobuf.CodedInputStream;
+import com.google.rpc.Code;
+import com.google.rpc.Status;
 import com.stfalcon.imageviewer.StfalconImageViewer;
 import com.stfalcon.imageviewer.listeners.OnImageChangeListener;
 import com.veinhorn.scrollgalleryview.MediaInfo;
 import com.veinhorn.scrollgalleryview.ScrollGalleryView;
 import com.veinhorn.scrollgalleryview.builder.GallerySettings;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,6 +81,7 @@ import static ogbe.ozioma.com.glideimageloader.dsl.DSL.image;
 
 public class GalleryFragment extends Fragment implements RecyclerViewAdapterGallery.ItemClickListener {
 
+    private static final int PICK_IMAGE = 1;
     private PhotosLibraryClient photosLibraryClient;
     private String albumID;
     private StfalconImageViewer stfalconImageViewer;
@@ -131,6 +154,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             // Get Media Items from Album and add to String List
             AtomicReference<Iterable<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
             finalImages = new AtomicReference<>(new ArrayList<>());
+            finalImages.get().add("ADDIMAGEPICTURE");
             AtomicReference<List<String>> videos = new AtomicReference<>(new ArrayList<>());
             AtomicReference<List<String>> notVideos = new AtomicReference<>(new ArrayList<>());
             for (MediaItem i : images.get()) {
@@ -200,6 +224,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                                 //                                showSystemUI();
                                 //                            })
                                 .show();
+                        stfalconImageViewer.setCurrentPosition(1);
 
                     });
                 });
@@ -257,22 +282,116 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return mView;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PICK_IMAGE) {
+            Uri selectedImageUri = data.getData();
+            String pathToFile = getImageFilePath(selectedImageUri);
+            Log.d("media_path", pathToFile);
+
+            // Open the file and automatically close it after upload
+            try (RandomAccessFile file = new RandomAccessFile(pathToFile, "r")) {
+                // Create a new upload request
+                UploadMediaItemRequest uploadRequest =
+                        UploadMediaItemRequest.newBuilder()
+                                // The file to upload
+                                .setDataFile(file)
+                                .build();
+                // Upload and capture the response
+                UploadMediaItemResponse uploadResponse = photosLibraryClient.uploadMediaItem(uploadRequest);
+                if (uploadResponse.getError().isPresent()) {
+                    // If the upload results in an error, handle it
+                    UploadMediaItemResponse.Error error = uploadResponse.getError().get();
+
+                    Log.v("Upload", "Error uploading file", error.getCause());
+
+                } else {
+                    // If the upload is successful, get the uploadToken
+                    String uploadToken = uploadResponse.getUploadToken().get();
+                    // Use this upload token to create a media item
+
+                    // Create a NewMediaItem with the following components:
+                    // - uploadToken obtained above
+                    // - filename that will be shown to the user in Google Photos
+                    // - description that will be shown to the user in Google Photos
+                    String fileName = "CabinRoadPhotosUpload";
+                    String itemDescription = "Uploaded from Cabin Road Photos";
+                    NewMediaItem newMediaItem = NewMediaItemFactory
+                            .createNewMediaItem(uploadToken, fileName, itemDescription);
+                    List<NewMediaItem> newItems = Arrays.asList(newMediaItem);
+
+                    // Create new media items in a specific album
+                    BatchCreateMediaItemsResponse response = photosLibraryClient.batchCreateMediaItems(albumID, newItems);
+                    for (NewMediaItemResult itemsResponse : response.getNewMediaItemResultsList()) {
+                        Status status = itemsResponse.getStatus();
+                        if (status.getCode() == Code.OK_VALUE) {
+                            // The item is successfully created in the user's library
+                            MediaItem createdItem = itemsResponse.getMediaItem();
+
+                        } else {
+                            // The item could not be created. Check the status and try again
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                // Error accessing the local file
+            }
+        }
+    }
+
+    public String getImageFilePath(Uri uri) {
+        String result = null;
+        String[] proj = {MediaStore.Images.Media.DATA};
+        Cursor cursor = mContext.getContentResolver().query(uri, proj, null, null, null);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                int column_index = cursor.getColumnIndexOrThrow(proj[0]);
+                result = cursor.getString(column_index);
+            }
+            cursor.close();
+        }
+        if (result == null) {
+            result = "Not found";
+        }
+        return result;
+    }
+
     @Override
     public void onItemClick(View view, int position) {
 //        hideSystemUI();
 
-        LayoutInflater inflater = LayoutInflater.from(view.getContext());
-        final View overlayView = inflater.inflate(R.layout.gallery_overlay, null);
+        if (position == 0) {
+            try {
+                ActivityCompat.requestPermissions((Activity) mContext, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        1);
+                if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+                    intent.setType("image/*");
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                    intent.setAction(Intent.ACTION_PICK);
+                    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
 
-        Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
-        new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
-                (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
+        } else {
+            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+            final View overlayView = inflater.inflate(R.layout.gallery_overlay, null);
+
+            Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
+            new StfalconImageViewer.Builder<>(getContext(), finalImages.get(),
+                    (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
 //                .withDismissListener(() -> {
 //                    showSystemUI();
 //                })
-                .withStartPosition(position)
-                .withOverlayView(overlayView)
-                .show();
+                    .withStartPosition(position)
+                    .withOverlayView(overlayView)
+                    .show();
+
+        }
 
     }
 

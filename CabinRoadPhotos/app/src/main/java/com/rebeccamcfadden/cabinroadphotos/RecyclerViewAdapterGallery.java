@@ -39,7 +39,14 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterGallery.ViewHolder holder, int position) {
-        Glide.with(holder.galleryImage.getContext()).load(mData.get(position)).into(holder.galleryImage);
+        if (position != 0) {
+            Glide.with(holder.galleryImage.getContext()).load(mData.get(position)).into(holder.galleryImage);
+            holder.galleryImageCard.setElevation(1);
+
+        } else {
+            holder.galleryImageCard.setElevation(0);
+            holder.addImage.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -63,11 +70,13 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         ShapeableImageView galleryImage;
         MaterialCardView galleryImageCard;
+        ShapeableImageView addImage;
 
         ViewHolder(View itemView) {
             super(itemView);
             galleryImage = itemView.findViewById(R.id.gallery_image);
             galleryImageCard = itemView.findViewById(R.id.gallery_image_card);
+            addImage = itemView.findViewById(R.id.add_image);
 
             galleryImageCard.setOnClickListener(this);
 //            itemView.setOnClickListener(this);

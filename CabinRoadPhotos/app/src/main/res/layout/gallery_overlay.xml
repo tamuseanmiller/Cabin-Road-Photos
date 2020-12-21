@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:id="@+id/gallery_overlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextClock
+        android:id="@+id/clock"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
+        android:layout_margin="60dp"
+        android:format12Hour="h:mm"
         android:textColor="@color/white"
-        android:textSize="40sp"
-        android:layout_margin="40dp"
-        android:format12Hour="h:mm"/>
+        android:textSize="100sp" />
 
 </RelativeLayout>
