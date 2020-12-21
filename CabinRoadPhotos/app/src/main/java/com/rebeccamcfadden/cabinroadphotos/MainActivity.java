@@ -21,6 +21,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -247,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
                 GoogleSignIn.getClient(this, gso).signOut();
                 Intent intent = new Intent(this, LoginActivity.class);
                 startActivity(intent);
+                new SharedPreferencesManager(this).storeString("refresh_token", "NULL");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

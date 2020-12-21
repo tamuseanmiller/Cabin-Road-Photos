@@ -49,7 +49,7 @@ public class LoginActivity extends AppCompatActivity {
         // Create Sign in options for photos access and device code and idtoken
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(Properties.getWebAPIKey())
-                .requestServerAuthCode(Properties.getWebAPIKey(), false)
+                .requestServerAuthCode(Properties.getWebAPIKey(), true)
                 .requestEmail()
                 .requestScopes(new Scope("https://www.googleapis.com/auth/photoslibrary"))
                 .build();
@@ -60,7 +60,7 @@ public class LoginActivity extends AppCompatActivity {
         // Check for existing Google Sign In account, if the user is already signed in
         // the GoogleSignInAccount will be non-null.
         account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account != null) {
+        if (account != null && !new SharedPreferencesManager(this).retrieveString("refresh_token", "NULL").equals("NULL")) {
 //            Don't reach this page
 //            firebaseAuthWithGoogle(account.getIdToken());
 
