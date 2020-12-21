@@ -9,6 +9,8 @@ import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
@@ -63,13 +65,27 @@ import com.google.photos.types.proto.MediaItem;
 import com.google.protobuf.CodedInputStream;
 import com.google.rpc.Code;
 import com.google.rpc.Status;
+import com.squareup.okhttp.Call;
+import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
 import com.stfalcon.imageviewer.listeners.OnImageChangeListener;
 import com.veinhorn.scrollgalleryview.MediaInfo;
 import com.veinhorn.scrollgalleryview.ScrollGalleryView;
 import com.veinhorn.scrollgalleryview.builder.GallerySettings;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.RequestDefaultHeaders;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -96,6 +112,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private String albumTitle;
     private AppCompatActivity mContext;
     private boolean isWriteable;
+    private AtomicReference<Iterable<MediaItem>> images;
+    private SwipeRefreshLayout refreshGallery;
 
     private Toolbar actionbar;
 
@@ -151,13 +169,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         Thread thread = new Thread(() -> {
 //            ((TextView) mView.findViewById(R.id.album_title)).setText(albumTitle);
-            SwipeRefreshLayout refreshGallery = mView.findViewById(R.id.refresh_gallery);
+            refreshGallery = mView.findViewById(R.id.refresh_gallery);
 
             if (mContext != null)
                 mContext.runOnUiThread(() -> refreshGallery.setRefreshing(true));
 
             // Get Media Items from Album and add to String List
-            AtomicReference<Iterable<MediaItem>> images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
             finalImages = new AtomicReference<>(new ArrayList<>());
 
             // Add upload button if album is writeable
@@ -259,23 +277,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 });
 
             // Swipe Refresh Actions
-            refreshGallery.setOnRefreshListener(() -> {
-                Thread t3 = new Thread(() -> {
-                    images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
-                    finalImages.get().clear();
-                    ArrayList<String> temp = new ArrayList<>();
-                    for (MediaItem i : images.get()) {
-                        temp.add(i.getBaseUrl());
-                    }
-                    finalImages.get().addAll(temp);
-                    temp.clear();
-                    if (mContext != null) {
-                        mContext.runOnUiThread(galleryAdapter::notifyDataSetChanged);
-                        mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
-                    }
-                });
-                t3.start();
-            });
+            refreshGallery.setOnRefreshListener(this::onRefresh);
 
             // Start slideshow
             Thread t2 = new Thread(() -> {
@@ -311,6 +313,28 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return mView;
     }
 
+    private void onRefresh() {
+        refreshGallery.setRefreshing(true);
+        Thread t3 = new Thread(() -> {
+            images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            finalImages.get().clear();
+            ArrayList<String> temp = new ArrayList<>();
+            if (isWriteable) {
+                temp.add("ADDIMAGEPICTURE");
+            }
+            for (MediaItem i : images.get()) {
+                temp.add(i.getBaseUrl());
+            }
+            finalImages.get().addAll(temp);
+            temp.clear();
+            if (mContext != null) {
+                mContext.runOnUiThread(galleryAdapter::notifyDataSetChanged);
+                mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
+            }
+        });
+        t3.start();
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -330,8 +354,77 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                         String pathToFile = getImageFilePath(uri);
                         Log.d("media_path", pathToFile);
 
+                        String file_extn = pathToFile.substring(pathToFile.lastIndexOf(".") + 1);
+
+                        if (file_extn.equals("img") || file_extn.equals("jpg") || file_extn.equals("jpeg") || file_extn.equals("gif") || file_extn.equals("png")) {
+                            //FINE
+                        } else {
+                            //NOT IN REQUIRED FORMAT
+                            return;
+                        }
+
+                        Bitmap photo = BitmapFactory.decodeFile(pathToFile);
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                        byte[] byteArray = stream.toByteArray();
+
+                        OkHttpClient client = new OkHttpClient();
+
+                        RequestBody body = RequestBody.create(MediaType.parse("image/" + file_extn), new File(pathToFile));
+
+                        Request request = new Request.Builder()
+                                .url("https://photoslibrary.googleapis.com/v1/uploads")
+                                .addHeader("Authorization", "Bearer " + MainActivity.accessToken)
+                                .addHeader("Content-type", "application/octet-stream")
+                                .addHeader("X-Goog-Upload-Protocol", "raw")
+                                .post(body)
+                                .build();
+
+                        Call call = client.newCall(request);
+                        Response response1 = null;
+                        try {
+                            response1 = call.execute();
+                            // If the upload is successful, get the uploadToken
+                            String uploadToken;
+                            if (response1.code() == 200) {
+                                uploadToken = response1.body().string();
+                            } else {
+                                return;
+                            }
+                            // Use this upload token to create a media item
+
+                            // Create a NewMediaItem with the following components:
+                            // - uploadToken obtained above
+                            // - filename that will be shown to the user in Google Photos
+                            // - description that will be shown to the user in Google Photos
+                            String fileName = "CabinRoadPhotosUpload";
+                            String itemDescription = "Uploaded from Cabin Road Photos";
+                            NewMediaItem newMediaItem = NewMediaItemFactory
+                                    .createNewMediaItem(uploadToken, fileName, itemDescription);
+                            List<NewMediaItem> newItems = Arrays.asList(newMediaItem);
+
+                            // Create new media items in a specific album
+                            BatchCreateMediaItemsResponse response = photosLibraryClient.batchCreateMediaItems(albumID, newItems);
+                            for (NewMediaItemResult itemsResponse : response.getNewMediaItemResultsList()) {
+                                Status status = itemsResponse.getStatus();
+                                if (status.getCode() == Code.OK_VALUE) {
+                                    // The item is successfully created in the user's library
+                                    MediaItem createdItem = itemsResponse.getMediaItem();
+                                    Log.v("Upload", "Upload Successful");
+                                    onRefresh();
+
+                                } else {
+                                    // The item could not be created. Check the status and try again
+                                    Log.v("Upload", "Upload Unsuccessful");
+                                }
+                            }
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
                         // Open the file and automatically close it after upload
-                        try (RandomAccessFile file = new RandomAccessFile(pathToFile, "r")) {
+                        /*try (RandomAccessFile file = new RandomAccessFile(pathToFile, "r")) {
                             // Create a new upload request
                             UploadMediaItemRequest uploadRequest =
                                     UploadMediaItemRequest.newBuilder()
@@ -347,36 +440,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                                 Log.v("Upload", "Error uploading file", error.getCause());
 
                             } else {
-                                // If the upload is successful, get the uploadToken
-                                String uploadToken = uploadResponse.getUploadToken().get();
-                                // Use this upload token to create a media item
 
-                                // Create a NewMediaItem with the following components:
-                                // - uploadToken obtained above
-                                // - filename that will be shown to the user in Google Photos
-                                // - description that will be shown to the user in Google Photos
-                                String fileName = "CabinRoadPhotosUpload";
-                                String itemDescription = "Uploaded from Cabin Road Photos";
-                                NewMediaItem newMediaItem = NewMediaItemFactory
-                                        .createNewMediaItem(uploadToken, fileName, itemDescription);
-                                List<NewMediaItem> newItems = Arrays.asList(newMediaItem);
-
-                                // Create new media items in a specific album
-                                BatchCreateMediaItemsResponse response = photosLibraryClient.batchCreateMediaItems(albumID, newItems);
-                                for (NewMediaItemResult itemsResponse : response.getNewMediaItemResultsList()) {
-                                    Status status = itemsResponse.getStatus();
-                                    if (status.getCode() == Code.OK_VALUE) {
-                                        // The item is successfully created in the user's library
-                                        MediaItem createdItem = itemsResponse.getMediaItem();
-
-                                    } else {
-                                        // The item could not be created. Check the status and try again
-                                    }
-                                }
-                            }
                         } catch (IOException e) {
                             // Error accessing the local file
-                        }
+                        }*/
                     }
                 }
             }

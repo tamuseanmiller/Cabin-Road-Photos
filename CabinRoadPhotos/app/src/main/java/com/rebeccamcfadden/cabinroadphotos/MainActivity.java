@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String accessToken;
+    public static String accessToken;
     private PhotosLibraryClient photosLibraryClient;
     private Thread t1;
     private String idToken;

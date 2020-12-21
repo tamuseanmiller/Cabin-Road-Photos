@@ -85,5 +85,6 @@ dependencies {
 
     implementation 'com.veinhorn.scrollgalleryview:glide-loader:1.2.4'
     implementation 'com.veinhorn.scrollgalleryview:library:1.2.6'
+    implementation("com.squareup.okio:okio:2.9.0")
 
 }
