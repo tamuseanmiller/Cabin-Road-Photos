@@ -6,13 +6,10 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -21,73 +18,43 @@ import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextClock;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageButton;
-import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.preference.*;
-
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.imageview.ShapeableImageView;
-import com.google.android.material.shape.CornerFamily;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
-import com.google.photos.library.v1.proto.Filters;
 import com.google.photos.library.v1.proto.NewMediaItem;
 import com.google.photos.library.v1.proto.NewMediaItemResult;
-import com.google.photos.library.v1.proto.UpdateAlbumRequest;
-import com.google.photos.library.v1.proto.UpdateAlbumRequestOrBuilder;
-import com.google.photos.library.v1.upload.UploadMediaItemRequest;
-import com.google.photos.library.v1.upload.UploadMediaItemResponse;
 import com.google.photos.library.v1.util.NewMediaItemFactory;
 import com.google.photos.types.proto.MediaItem;
-import com.google.protobuf.CodedInputStream;
 import com.google.rpc.Code;
 import com.google.rpc.Status;
 import com.squareup.okhttp.Call;
-import com.squareup.okhttp.FormEncodingBuilder;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
-import com.stfalcon.imageviewer.listeners.OnImageChangeListener;
-import com.veinhorn.scrollgalleryview.MediaInfo;
-import com.veinhorn.scrollgalleryview.ScrollGalleryView;
-import com.veinhorn.scrollgalleryview.builder.GallerySettings;
-
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.RequestDefaultHeaders;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -95,9 +62,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
-import ogbe.ozioma.com.glideimageloader.dsl.DSL;
-
-import static ogbe.ozioma.com.glideimageloader.dsl.DSL.image;
 
 public class GalleryFragment extends Fragment implements RecyclerViewAdapterGallery.ItemClickListener {
 
@@ -136,12 +100,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         super.onCreate(savedInstanceState);
     }
 
-//    @Override
-//    public void onResume() {
-//        showSystemUI();
-//        super.onResume();
-//    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -151,7 +109,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
-
 
         // Set Action bar back button and colors
         actionbar = mContext.findViewById(R.id.toolbar_main);
@@ -168,7 +125,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         }
 
         Thread thread = new Thread(() -> {
-//            ((TextView) mView.findViewById(R.id.album_title)).setText(albumTitle);
             refreshGallery = mView.findViewById(R.id.refresh_gallery);
 
             if (mContext != null)
@@ -183,14 +139,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             if (isWriteable) {
                 finalImages.get().add("ADDIMAGEPICTURE");
             }
-            AtomicReference<List<String>> videos = new AtomicReference<>(new ArrayList<>());
-            AtomicReference<List<String>> notVideos = new AtomicReference<>(new ArrayList<>());
             for (MediaItem i : images.get()) {
-                if (i.getMediaMetadata().hasVideo()) {
-                    videos.get().add(i.getBaseUrl());
-                } else {
-                    notVideos.get().add(i.getBaseUrl());
-                }
                 finalImages.get().add(i.getBaseUrl());
             }
 
@@ -250,12 +199,14 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                         goLeft.setVisibility(View.VISIBLE);
                         goRight.setVisibility(View.VISIBLE);
 
+                        // If right chevron is clicked
                         goRight.setOnClickListener(y -> {
                             if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
                                 stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
                             }
                         });
 
+                        // If left chevron is clicked
                         goLeft.setOnClickListener(y -> {
                             if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
                                 stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
@@ -263,7 +214,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                         });
 
                         stfalconImageViewer = new StfalconImageViewer.Builder<>(
-                                getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size() - 1) : finalImages.get(), (imageView, image) ->
+                                getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size()) : finalImages.get(), (imageView, image) ->
                                 Glide.with(mContext).load(image).into(imageView))
                                 .withOverlayView(overlayView)
                                 .show();
@@ -313,20 +264,29 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return mView;
     }
 
+    // When refresh is called
     private void onRefresh() {
         refreshGallery.setRefreshing(true);
         Thread t3 = new Thread(() -> {
+
+            // Grab images in album
             images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
             finalImages.get().clear();
             ArrayList<String> temp = new ArrayList<>();
+
+            // If album is writeable, add an extra image
             if (isWriteable) {
                 temp.add("ADDIMAGEPICTURE");
             }
+
+            // Add all URLS to temp for finalImages
             for (MediaItem i : images.get()) {
                 temp.add(i.getBaseUrl());
             }
             finalImages.get().addAll(temp);
             temp.clear();
+
+            // Update views
             if (mContext != null) {
                 mContext.runOnUiThread(galleryAdapter::notifyDataSetChanged);
                 mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
@@ -339,112 +299,91 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PICK_IMAGE) {
-//            Uri selectedImageUri = data.getData();
-//            String pathToFile = getImageFilePath(selectedImageUri);
-//            Log.d("media_path", pathToFile);
-
             if (data != null) {
+                List<NewMediaItem> newItems = new ArrayList<>();
                 ClipData clipData = data.getClipData();
                 if (clipData != null) {
-                    for (int i = 0; i < clipData.getItemCount(); i++) {
-                        ClipData.Item item = clipData.getItemAt(i);
-                        Uri uri = item.getUri();
 
-                        //In case you need image's absolute path
-                        String pathToFile = getImageFilePath(uri);
-                        Log.d("media_path", pathToFile);
+                    Thread uploadThread = new Thread(() -> {
 
-                        String file_extn = pathToFile.substring(pathToFile.lastIndexOf(".") + 1);
+                        // Iterate through images chosen
+                        for (int i = 0; i < clipData.getItemCount(); i++) {
+                            ClipData.Item item = clipData.getItemAt(i);
+                            Uri uri = item.getUri();
 
-                        if (file_extn.equals("img") || file_extn.equals("jpg") || file_extn.equals("jpeg") || file_extn.equals("gif") || file_extn.equals("png")) {
-                            //FINE
-                        } else {
-                            //NOT IN REQUIRED FORMAT
-                            return;
-                        }
+                            //In case you need image's absolute path
+                            String pathToFile = getImageFilePath(uri);
+                            Log.d("media_path", pathToFile);
 
-                        Bitmap photo = BitmapFactory.decodeFile(pathToFile);
-                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                        photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                        byte[] byteArray = stream.toByteArray();
+                            String file_extn = pathToFile.substring(pathToFile.lastIndexOf(".") + 1);
 
-                        OkHttpClient client = new OkHttpClient();
+                            if (file_extn.equals("img") || file_extn.equals("jpg") || file_extn.equals("jpeg") || file_extn.equals("gif") || file_extn.equals("png")) {
+                                //FINE
+                                Log.v("Upload", "Valid File Extension");
 
-                        RequestBody body = RequestBody.create(MediaType.parse("image/" + file_extn), new File(pathToFile));
-
-                        Request request = new Request.Builder()
-                                .url("https://photoslibrary.googleapis.com/v1/uploads")
-                                .addHeader("Authorization", "Bearer " + MainActivity.accessToken)
-                                .addHeader("Content-type", "application/octet-stream")
-                                .addHeader("X-Goog-Upload-Protocol", "raw")
-                                .post(body)
-                                .build();
-
-                        Call call = client.newCall(request);
-                        Response response1 = null;
-                        try {
-                            response1 = call.execute();
-                            // If the upload is successful, get the uploadToken
-                            String uploadToken;
-                            if (response1.code() == 200) {
-                                uploadToken = response1.body().string();
                             } else {
+                                //NOT IN REQUIRED FORMAT
+                                Log.v("Upload", "Invalid File Extension");
                                 return;
                             }
-                            // Use this upload token to create a media item
 
-                            // Create a NewMediaItem with the following components:
-                            // - uploadToken obtained above
-                            // - filename that will be shown to the user in Google Photos
-                            // - description that will be shown to the user in Google Photos
-                            String fileName = "CabinRoadPhotosUpload";
-                            String itemDescription = "Uploaded from Cabin Road Photos";
-                            NewMediaItem newMediaItem = NewMediaItemFactory
-                                    .createNewMediaItem(uploadToken, fileName, itemDescription);
-                            List<NewMediaItem> newItems = Arrays.asList(newMediaItem);
-
-                            // Create new media items in a specific album
-                            BatchCreateMediaItemsResponse response = photosLibraryClient.batchCreateMediaItems(albumID, newItems);
-                            for (NewMediaItemResult itemsResponse : response.getNewMediaItemResultsList()) {
-                                Status status = itemsResponse.getStatus();
-                                if (status.getCode() == Code.OK_VALUE) {
-                                    // The item is successfully created in the user's library
-                                    MediaItem createdItem = itemsResponse.getMediaItem();
-                                    Log.v("Upload", "Upload Successful");
-                                    onRefresh();
-
+                            // Build and execute request for upload token
+                            OkHttpClient client = new OkHttpClient();
+                            RequestBody body = RequestBody.create(
+                                    MediaType.parse("image/" + file_extn), new File(pathToFile));
+                            Request request = new Request.Builder()
+                                    .url("https://photoslibrary.googleapis.com/v1/uploads")
+                                    .addHeader("Authorization", "Bearer " + MainActivity.accessToken)
+                                    .addHeader("Content-type", "application/octet-stream")
+                                    .addHeader("X-Goog-Upload-Protocol", "raw")
+                                    .post(body)
+                                    .build();
+                            Call call = client.newCall(request);
+                            try {
+                                Response response1 = call.execute();
+                                // If the upload is successful, get the uploadToken
+                                String uploadToken;
+                                if (response1.code() == 200) {
+                                    uploadToken = response1.body().string();
                                 } else {
-                                    // The item could not be created. Check the status and try again
-                                    Log.v("Upload", "Upload Unsuccessful");
+                                    return;
                                 }
+                                // Use this upload token to create a media item
+
+                                // Create a NewMediaItem with the following components:
+                                // - uploadToken obtained above
+                                // - filename that will be shown to the user in Google Photos
+                                // - description that will be shown to the user in Google Photos
+                                String fileName = "CabinRoadPhotosUpload";
+                                String itemDescription = "Uploaded from Cabin Road Photos";
+                                NewMediaItem newMediaItem = NewMediaItemFactory
+                                        .createNewMediaItem(uploadToken, fileName, itemDescription);
+                                newItems.add(newMediaItem);
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
                             }
 
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            // Create new media items in a specific album
+                            if (!newItems.isEmpty()) {
+                                BatchCreateMediaItemsResponse response = photosLibraryClient.batchCreateMediaItems(albumID, newItems);
+                                for (NewMediaItemResult itemsResponse : response.getNewMediaItemResultsList()) {
+                                    Status status = itemsResponse.getStatus();
+                                    if (status.getCode() == Code.OK_VALUE) {
+                                        // The item is successfully created in the user's library
+                                        MediaItem createdItem = itemsResponse.getMediaItem();
+                                        Log.v("Upload", "Upload Successful");
+
+                                    } else {
+                                        // The item could not be created. Check the status and try again
+                                        Log.v("Upload", "Upload Unsuccessful");
+                                    }
+                                }
+                                mContext.runOnUiThread(this::onRefresh);
+                            }
                         }
-
-                        // Open the file and automatically close it after upload
-                        /*try (RandomAccessFile file = new RandomAccessFile(pathToFile, "r")) {
-                            // Create a new upload request
-                            UploadMediaItemRequest uploadRequest =
-                                    UploadMediaItemRequest.newBuilder()
-                                            // The file to upload
-                                            .setDataFile(file)
-                                            .build();
-                            // Upload and capture the response
-                            UploadMediaItemResponse uploadResponse = photosLibraryClient.uploadMediaItem(uploadRequest);
-                            if (uploadResponse.getError().isPresent()) {
-                                // If the upload results in an error, handle it
-                                UploadMediaItemResponse.Error error = uploadResponse.getError().get();
-
-                                Log.v("Upload", "Error uploading file", error.getCause());
-
-                            } else {
-
-                        } catch (IOException e) {
-                            // Error accessing the local file
-                        }*/
-                    }
+                    });
+                    uploadThread.start();
                 }
             }
         }
@@ -470,7 +409,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     @Override
     public void onItemClick(View view, int position) {
-//        hideSystemUI();
 
         if (galleryAdapter.getItem(position).equals("ADDIMAGEPICTURE")) {
             try {
@@ -510,7 +448,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             });
 
             Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
-            stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size() - 1) : finalImages.get(),
+            stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size()) : finalImages.get(),
                     (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
                     .withOverlayView(overlayView)
                     .withStartPosition(isWriteable ? position - 1 : position)
@@ -543,34 +481,11 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return noOfColumns - 1;
     }
 
-//    private void hideSystemUI() {
-//        // Enables regular immersive mode.
-//        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-//        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-//        View decorView = mContext.getWindow().getDecorView();
-//        decorView.setSystemUiVisibility(
-//                View.SYSTEM_UI_FLAG_IMMERSIVE
-//                        // Set the content to appear under the system bars so that the
-//                        // content doesn't resize when the system bars hide and show.
-//                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                        // Hide the nav bar and status bar
-//                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-//                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
-//    }
-
-    // Shows the system bars by removing all the flags
-    // except for the ones that make the content appear under the system bars.
-    private void showSystemUI() {
-        View decorView = mContext.getWindow().getDecorView();
-        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
-    }
-
     public void setAlbumTitle(String title) {
         this.albumTitle = title;
     }
 
+    // Grab Application Context, since not started from Activity
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
