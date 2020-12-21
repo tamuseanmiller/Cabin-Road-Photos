@@ -34,6 +34,7 @@ import com.google.auth.oauth2.UserCredentials;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.library.v1.PhotosLibrarySettings;
+import com.google.photos.types.proto.Album;
 import com.google.photos.types.proto.MediaItem;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.FormEncodingBuilder;
@@ -42,19 +43,28 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
-import com.yanzhenjie.album.Album;
 import com.yanzhenjie.album.AlbumConfig;
 import com.yanzhenjie.album.AlbumFile;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.flutter.embedding.android.FlutterFragment;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngineCache;
+import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.plugin.common.MethodChannel;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String CHANNEL = "slideshowChannel/mediaItems";
     private String accessToken;
     private PhotosLibraryClient photosLibraryClient;
     private Thread t1;
@@ -63,6 +73,12 @@ public class MainActivity extends AppCompatActivity {
     private AlbumFragment albumFragment;
 
     private Toolbar toolbar;
+    private String slideshowData;
+
+    // tag String to represent the FlutterFragment within this Activity's FragmentManager
+    public static final String TAG_FLUTTER_FRAGMENT = "slideshow_fragment";
+    public FlutterFragment slideshowFragment;
+    FlutterEngine flutterEngine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         idToken = intent.getStringExtra("idToken");
+        flutterEngine = new FlutterEngine(this);
 
         // Toolbar customization
         toolbar = findViewById(R.id.toolbar_main);
@@ -120,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-
     }
 
     private void getPhotosLibrary() {
@@ -196,6 +212,73 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void createSlideshowFragment(Fragment callingFragment, String albumID, String albumTitle, Iterable<MediaItem> mediaItemList) {
+        JSONArray mediaItemJson = new JSONArray();
+        JSONObject albumData = new JSONObject();
+        try {
+            albumData.put("id", albumID);
+            albumData.put("title", albumTitle);
+            for (MediaItem m : mediaItemList) {
+                JSONObject mObj = new JSONObject();
+                mObj.put("id", m.getId());
+                mObj.put("description", m.getDescription());
+                mObj.put("baseUrl", m.getBaseUrl());
+                if (m.getMediaMetadata().hasVideo()){
+                    mObj.put("type", "video");
+                } else {
+                    mObj.put("type", "photo");
+                }
+                mediaItemJson.put(mObj);
+            }
+            albumData.put("mediaItems", mediaItemJson);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        String mediaItemData = albumData.toString();
+        // Start executing Dart code in the FlutterEngine.
+        flutterEngine.getDartExecutor().executeDartEntrypoint(
+                DartExecutor.DartEntrypoint.createDefault()
+        );
+
+        // Cache the pre-warmed FlutterEngine to be used later by FlutterFragment.
+        FlutterEngineCache
+                .getInstance()
+                .put("slideshow_engine", flutterEngine);
+        MethodChannel mc = new MethodChannel(
+                FlutterEngineCache
+                        .getInstance().get("slideshow_engine")
+                        .getDartExecutor()
+                        .getBinaryMessenger(),
+                CHANNEL);
+        mc.setMethodCallHandler((methodCall, result) ->
+                {
+                    if (methodCall.method.equals("test")) {
+                        result.success("Hai from android and this is the data you sent me " + methodCall.argument("data"));
+//Accessing data sent from flutter
+                    } else if (methodCall.method.equals("getMediaItems")) {
+                        result.success(mediaItemData);
+                        Log.d("mediaDisplay","getMediaItems called - sent: " + mediaItemData);
+                    } else {
+                        Log.i("new method came", methodCall.method);
+                    }
+                }
+        );
+
+        slideshowFragment = (FlutterFragment) getSupportFragmentManager()
+                .findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+        slideshowFragment = FlutterFragment.createDefault();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .hide(callingFragment)
+                .add(
+                        R.id.main_layout,
+                        slideshowFragment,
+                        TAG_FLUTTER_FRAGMENT
+                )
+                .commit();
+//        getWindow().addFlags(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+    }
+
     @Override
     public void onBackPressed() {
         if (getSupportFragmentManager().getBackStackEntryCount() == 1) {
@@ -203,6 +286,9 @@ public class MainActivity extends AppCompatActivity {
             startMain.addCategory(Intent.CATEGORY_HOME);
             startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(startMain);
+        } else if (slideshowFragment != null) {
+           slideshowFragment.onBackPressed();
+           slideshowFragment = null;
         } else {
             super.onBackPressed();
         }
@@ -251,5 +337,29 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            @NonNull String[] permissions,
+            @NonNull int[] grantResults
+    ) {
+        if (slideshowFragment != null) slideshowFragment.onRequestPermissionsResult(
+                requestCode,
+                permissions,
+                grantResults
+        );
+    }
+
+    @Override
+    public void onUserLeaveHint() {
+        if (slideshowFragment != null) slideshowFragment.onUserLeaveHint();
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (slideshowFragment != null) slideshowFragment.onTrimMemory(level);
     }
 }

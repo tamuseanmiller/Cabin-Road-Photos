@@ -6,11 +6,8 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -19,57 +16,36 @@ import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextClock;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageButton;
-import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.preference.*;
-
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.imageview.ShapeableImageView;
-import com.google.android.material.shape.CornerFamily;
 import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
-import com.google.photos.library.v1.proto.Filters;
 import com.google.photos.library.v1.proto.NewMediaItem;
 import com.google.photos.library.v1.proto.NewMediaItemResult;
-import com.google.photos.library.v1.proto.UpdateAlbumRequest;
-import com.google.photos.library.v1.proto.UpdateAlbumRequestOrBuilder;
 import com.google.photos.library.v1.upload.UploadMediaItemRequest;
 import com.google.photos.library.v1.upload.UploadMediaItemResponse;
 import com.google.photos.library.v1.util.NewMediaItemFactory;
 import com.google.photos.types.proto.MediaItem;
-import com.google.protobuf.CodedInputStream;
 import com.google.rpc.Code;
 import com.google.rpc.Status;
 import com.stfalcon.imageviewer.StfalconImageViewer;
-import com.stfalcon.imageviewer.listeners.OnImageChangeListener;
-import com.veinhorn.scrollgalleryview.MediaInfo;
-import com.veinhorn.scrollgalleryview.ScrollGalleryView;
-import com.veinhorn.scrollgalleryview.builder.GallerySettings;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -79,9 +55,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
-import ogbe.ozioma.com.glideimageloader.dsl.DSL;
-
-import static ogbe.ozioma.com.glideimageloader.dsl.DSL.image;
 
 public class GalleryFragment extends Fragment implements RecyclerViewAdapterGallery.ItemClickListener {
 
@@ -224,36 +197,37 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                         //                    hideSystemUI();
 
-                        LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
-                        final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
-
-                        AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
-                        AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
-                        goLeft.setVisibility(View.VISIBLE);
-                        goRight.setVisibility(View.VISIBLE);
-
-                        goRight.setOnClickListener(y -> {
-                            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
-                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
-                            }
-                        });
-
-                        goLeft.setOnClickListener(y -> {
-                            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
-                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
-                            }
-                        });
-
-                        stfalconImageViewer = new StfalconImageViewer.Builder<>(
-                                getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size() - 1) : finalImages.get(), (imageView, image) ->
-                                Glide.with(mContext).load(image).into(imageView))
-                                .withOverlayView(overlayView)
-                                .show();
-
-                        // Add upload offset if album is writeable
-                        if (isWriteable) {
-                            stfalconImageViewer.setCurrentPosition(1);
-                        }
+//                        LayoutInflater inflater2 = LayoutInflater.from(mView.getContext());
+//                        final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
+//
+//                        AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
+//                        AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
+//                        goLeft.setVisibility(View.VISIBLE);
+//                        goRight.setVisibility(View.VISIBLE);
+//
+//                        goRight.setOnClickListener(y -> {
+//                            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
+//                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+//                            }
+//                        });
+//
+//                        goLeft.setOnClickListener(y -> {
+//                            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+//                                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+//                            }
+//                        });
+//
+//                        stfalconImageViewer = new StfalconImageViewer.Builder<>(
+//                                getContext(), isWriteable ? finalImages.get().subList(1, finalImages.get().size() - 1) : finalImages.get(), (imageView, image) ->
+//                                Glide.with(mContext).load(image).into(imageView))
+//                                .withOverlayView(overlayView)
+//                                .show();
+//
+//                        // Add upload offset if album is writeable
+//                        if (isWriteable) {
+//                            stfalconImageViewer.setCurrentPosition(1);
+//                        }
+                        ((MainActivity) getActivity()).createSlideshowFragment(this, albumID, albumTitle, images.get());
 
                     });
                 });

@@ -2,6 +2,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
@@ -37,11 +38,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private ContentResolver cResolver;
     //Window object, that will store a reference to the current window
     private Window window;
+    SharedPreferences flutterPref;
     private SharedPreferencesManager preferencesManager;
 
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        flutterPref = getContext().getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE);
         preferencesManager = new SharedPreferencesManager(getContext());
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
         //Get the content resolver
@@ -76,10 +79,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             Log.e("Error", "Cannot access system brightness");
             e.printStackTrace();
         }
-        mAutoplay = getPreferenceManager().findPreference("autoplay");
-        mAutoplay.setDefaultValue(preferencesManager.retrieveBoolean("autoplay", false));
-        mAutoplaySpeed = getPreferenceManager().findPreference("autoplaySpeed");
-        mAutoplaySpeed.setDefaultValue(preferencesManager.retrieveInt("autoplaySpeed", 20));
+        mAutoplay = getPreferenceManager().findPreference("flutter.autoplay");
+        mAutoplay.setDefaultValue(flutterPref.getBoolean("flutter.autoplay", false));
+        mAutoplaySpeed = getPreferenceManager().findPreference("flutter.autoplaySpeed");
+        mAutoplaySpeed.setDefaultValue(flutterPref.getInt("flutter.autoplaySpeed", 20));
 
 //         Check to see if we have write settings
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1 && !Settings.System.canWrite(getActivity())) {
@@ -105,11 +108,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return true;
         });
         mAutoplaySpeed.setOnPreferenceChangeListener((preference, newValue) -> {
-            preferencesManager.storeInt("autoplaySpeed", (Integer) newValue);
+            SharedPreferences.Editor editor = flutterPref.edit();
+            editor.putInt("flutter.autoplaySpeed", (Integer) newValue);
+            editor.apply();
             return true;
         });
         mAutoplay.setOnPreferenceChangeListener((preference, newValue) -> {
-            preferencesManager.storeBoolean("autoplay", (boolean) newValue);
+            SharedPreferences.Editor editor = flutterPref.edit();
+            editor.putBoolean("flutter.autoplay", (boolean) newValue);
+            editor.apply();
             return true;
         });
         mDimming.setOnPreferenceChangeListener((preference, newValue) -> {
