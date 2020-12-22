@@ -17,6 +17,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -75,7 +76,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private SwipeRefreshLayout refreshGallery;
 
     private Toolbar actionbar;
-    private String videoSaveDir;
+    private File videoSaveDir;
 
     public GalleryFragment() {
         albumID = null;
@@ -97,7 +98,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         autoplayDuration = new SharedPreferencesManager(getContext()).retrieveInt("autoplaySpeed", 20);
         Log.d("slideshow", "autoplay duration set to " + autoplayDuration + " seconds");
 
-        this.videoSaveDir = getContext().getFilesDir().getAbsolutePath() + "/videos";
+        this.videoSaveDir = ((MainActivity) getActivity()).videoSaveDir;
 
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
@@ -208,18 +209,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     private void fetchVideos(ArrayList<Pair<String, String>> videos) {
         Thread videoThread = new Thread(() -> {
-            File directory = new File(videoSaveDir);
+            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            File directory = new File(albumDir);
             if (! directory.exists()){
                 directory.mkdir();
-                // If you require it to make the entire directory path including parents,
-                // use directory.mkdirs(); here instead.
-            }
-            String albumDir = videoSaveDir + "/" + albumID;
-            directory = new File(albumDir);
-            if (! directory.exists()){
-                directory.mkdir();
-                // If you require it to make the entire directory path including parents,
-                // use directory.mkdirs(); here instead.
             }
             for (Pair<String, String> video : videos) {
                 try {
@@ -282,6 +275,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 Uri data = isDownloaded ? Uri.parse(fileLoc.getAbsolutePath()) : Uri.parse(m.getBaseUrl() + "=dv");
                 intent.setDataAndType(data, "video/*");
                 intent.setFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                intent.putExtra (MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
+                Toast.makeText(getContext(), "Playing video", Toast.LENGTH_LONG).show();
                 startActivity(intent);
             }
         });

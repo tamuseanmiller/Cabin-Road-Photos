@@ -2,6 +2,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
@@ -32,6 +33,7 @@ import com.squareup.okhttp.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static String accessToken;
     public static PhotosLibraryClient photosLibraryClient;
+    public static File videoSaveDir;
     private Thread t1;
     private String idToken;
     private GoogleSignInOptions gso;
@@ -62,6 +65,13 @@ public class MainActivity extends AppCompatActivity {
         // Toolbar customization
         Toolbar toolbar = findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
+
+        // Initialize save directory
+        String root = Environment.getExternalStorageDirectory().toString();
+        videoSaveDir = new File(root + "/cabinroadphotos/videos");
+        if (!videoSaveDir.exists()) {
+            videoSaveDir.mkdirs();
+        }
 
         // Sign in Options
         gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
