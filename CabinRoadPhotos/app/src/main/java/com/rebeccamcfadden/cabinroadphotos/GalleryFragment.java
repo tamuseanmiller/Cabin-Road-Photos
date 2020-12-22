@@ -1,42 +1,37 @@
 package com.rebeccamcfadden.cabinroadphotos;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.appcompat.widget.Toolbar;
+import androidx.collection.ArraySet;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.photos.library.v1.PhotosLibraryClient;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
 import com.google.photos.library.v1.proto.NewMediaItem;
 import com.google.photos.library.v1.proto.NewMediaItemResult;
@@ -51,13 +46,10 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
-import com.stfalcon.imageviewer.listeners.OnDismissListener;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -72,6 +64,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private String albumID;
     private StfalconImageViewer stfalconImageViewer;
     private AtomicReference<List<String>> finalImages;
+    private AtomicReference<List<MediaItem>> finalImagesRaw;
     private int autoplayDuration;
     private RecyclerView galleryRecycler;
     private RecyclerViewAdapterGallery galleryAdapter;
@@ -82,6 +75,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private SwipeRefreshLayout refreshGallery;
 
     private Toolbar actionbar;
+    private String videoSaveDir;
 
     public GalleryFragment() {
         albumID = null;
@@ -93,7 +87,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
     }
 
@@ -103,6 +96,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         autoplayDuration = new SharedPreferencesManager(getContext()).retrieveInt("autoplaySpeed", 20);
         Log.d("slideshow", "autoplay duration set to " + autoplayDuration + " seconds");
+
+        this.videoSaveDir = getContext().getFilesDir().getAbsolutePath() + "/videos";
 
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
@@ -129,16 +124,26 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
             // Get Media Items from Album and add to String List
             images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            ArrayList<Pair<String, String>> videos = new ArrayList<>();
             finalImages = new AtomicReference<>(new ArrayList<>());
+            finalImagesRaw = new AtomicReference<>(new ArrayList<>());
 
             // Add upload button if album is writeable
             isWriteable = photosLibraryClient.getAlbum(albumID).getIsWriteable();
             if (isWriteable) {
                 finalImages.get().add("ADDIMAGEPICTURE");
             }
+
             for (MediaItem i : images.get()) {
+                if (i.getMediaMetadata().hasVideo()) {
+                    Pair<String, String> video = new Pair<>(i.getBaseUrl() + "=dv", i.getId());
+                    videos.add(video);
+                }
+                finalImagesRaw.get().add(i);
                 finalImages.get().add(i.getBaseUrl());
             }
+
+            fetchVideos(videos);
 
             // Initialize RecyclerView
             if (mContext != null) {
@@ -199,7 +204,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
             if (mContext != null)
                 mContext.runOnUiThread(() -> refreshGallery.setRefreshing(false));
-
         });
 
         if (mContext != null)
@@ -227,9 +231,48 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return mView;
     }
 
+    private void fetchVideos(ArrayList<Pair<String, String>> videos) {
+        Thread videoThread = new Thread(() -> {
+            File directory = new File(videoSaveDir);
+            if (! directory.exists()){
+                directory.mkdir();
+                // If you require it to make the entire directory path including parents,
+                // use directory.mkdirs(); here instead.
+            }
+            videoSaveDir += "/" + albumID;
+            directory = new File(videoSaveDir);
+            if (! directory.exists()){
+                directory.mkdir();
+                // If you require it to make the entire directory path including parents,
+                // use directory.mkdirs(); here instead.
+            }
+            for (Pair<String, String> video : videos) {
+                try {
+                    String videoUrl = video.first;
+                    String videoId = video.second;
+                    File file = new File(videoSaveDir + videoId + ".mp4");
+                    if (file.exists()) {
+                        Log.d("fileDownload", "file " + videoId + ".mp4 exists");
+                    } else {
+                        HttpDownloadUtility.downloadFile(videoUrl, videoSaveDir + "/", videoId);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        videoThread.start();
+    }
+
     private void startSlideshow(int position) {
         LayoutInflater inflater2 = LayoutInflater.from(mContext);
         final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
+        overlayView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("debug", "overlay was clicked");
+            }
+        });
 
         AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
@@ -257,9 +300,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 Glide.with(mContext).load(image).into(imageView))
                 .withOverlayView(overlayView)
                 .withDismissListener(() -> stfalconImageViewer = null)
+                .withStartPosition(isWriteable ? position - 1 : position)
                 .show();
-
-        stfalconImageViewer.setCurrentPosition(position);
 
         // Start Slideshow Thread
         Thread t2 = new Thread(() -> {
@@ -267,7 +309,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             // Traverse full album
             while (true) {
                 try {
-                    // Sleep for x minutes, then switch picture
+                    // Sleep for x seconds, then switch picture
                     Thread.sleep(autoplayDuration * 1000);
                     if (mContext != null && stfalconImageViewer != null) {
                         if (stfalconImageViewer.currentPosition() + 2 < finalImages.get().size()) {
@@ -295,19 +337,31 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             // Grab images in album
             images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
             finalImages.get().clear();
+
+            // Add all URLS to temp for finalImages
             ArrayList<String> temp = new ArrayList<>();
+            ArrayList<MediaItem> temp2 = new ArrayList<>();
+            ArrayList<Pair<String, String>> videos = new ArrayList<>();
 
             // If album is writeable, add an extra image
             if (isWriteable) {
                 temp.add("ADDIMAGEPICTURE");
             }
 
-            // Add all URLS to temp for finalImages
             for (MediaItem i : images.get()) {
+                if (i.getMediaMetadata().hasVideo()) {
+                    Pair<String, String> video = new Pair<>(i.getBaseUrl() + "=dv", i.getId());
+                    videos.add(video);
+                }
                 temp.add(i.getBaseUrl());
+                temp2.add(i);
             }
+
             finalImages.get().addAll(temp);
+            finalImagesRaw.get().addAll(temp2);
+            fetchVideos(videos);
             temp.clear();
+            temp2.clear();
 
             // Update views
             if (mContext != null) {
@@ -460,38 +514,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 e.printStackTrace();
                 throw e;
             }
-
         } else {
-
-            // Open Full screen image view and set overlay button clicks
-            LayoutInflater inflater = LayoutInflater.from(view.getContext());
-            final View overlayView = inflater.inflate(R.layout.gallery_overlay, null);
-
-            AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
-            AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
-            goLeft.setVisibility(View.VISIBLE);
-            goRight.setVisibility(View.VISIBLE);
-
-            goRight.setOnClickListener(y -> {
-                if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
-                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
-                }
-            });
-
-            goLeft.setOnClickListener(y -> {
-                if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
-                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
-                }
-            });
-
-            Log.d("debug", "we are on this line");  // LMAO WHAT IS THIS
-            stfalconImageViewer = new StfalconImageViewer.Builder<>(getContext(), isWriteable ?
-                    finalImages.get().subList(1, finalImages.get().size()) : finalImages.get(),
-                    (imageView, image) -> Glide.with(mContext).load(image).into(imageView))
-                    .withOverlayView(overlayView)
-                    .withStartPosition(isWriteable ? position - 1 : position)
-                    .show();
-
+            startSlideshow(position);
         }
 
     }

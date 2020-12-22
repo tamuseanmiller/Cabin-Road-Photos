@@ -68,6 +68,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             Drawable drawable = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_arrow_back);
             drawable.setTint(ContextCompat.getColor(getActivity(), R.color.white));
             actionbar.setNavigationIcon(drawable);
+            actionbar.setTitle("Application Settings");
             actionbar.setNavigationOnClickListener(v -> {
                 actionbar.setNavigationIcon(null);
                 getActivity().onBackPressed();

@@ -87,4 +87,5 @@ dependencies {
     implementation 'com.veinhorn.scrollgalleryview:library:1.2.6'
     implementation("com.squareup.okio:okio:2.9.0")
 
+    implementation 'commons-io:commons-io:2.6'
 }

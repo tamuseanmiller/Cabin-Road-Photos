@@ -3,10 +3,10 @@ package com.rebeccamcfadden.cabinroadphotos;
 public class Properties {
 
     public static String getWebAPIKey() {
-        return "806882709826-07971357nbqs6j314o72bpbak80l3mb1.apps.googleusercontent.com";
+        return "535404297790-898p9irusfc0nsvl2717e3c5vf83tvhb.apps.googleusercontent.com";
     }
 
     public static String getWebSecretKey() {
-        return "BS_PX2HsqWTOzWv_07SgI7tF";
+        return "kdHKyI6744_qzOGBv_x_Appp";
     }
 }
