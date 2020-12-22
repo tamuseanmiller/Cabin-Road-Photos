@@ -7,8 +7,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
@@ -52,7 +55,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
@@ -74,6 +80,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private boolean isWriteable;
     private AtomicReference<Iterable<MediaItem>> images;
     private SwipeRefreshLayout refreshGallery;
+
+    private Timer slideshowTimer;
 
     private Toolbar actionbar;
     private File videoSaveDir;
@@ -232,38 +240,82 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         videoThread.start();
     }
 
+    private void incrementSlideshow(StfalconImageViewer stfalconImageViewer) {
+        if (mContext != null && stfalconImageViewer != null) {
+            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
+                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1));
+            } else {
+                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(0));
+            }
+        } else {
+            Log.e("slideshow", "mContext or stfalconImageViewer were null");
+        }
+    }
+
+    private void decrementSlideshow(StfalconImageViewer stfalconImageViewer) {
+        if (mContext != null && stfalconImageViewer != null) {
+            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1));
+            } else {
+                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1));
+            }
+        } else {
+            Log.e("slideshow", "mContext or stfalconImageViewer were null");
+        }
+    }
+
+    private void toggleVisibility(AppCompatImageButton button) {
+        if (button.getVisibility() == View.VISIBLE) {
+            button.setVisibility(View.INVISIBLE);
+        } else button.setVisibility(View.VISIBLE);
+    }
+
+
     private void startSlideshow(int position) {
         LayoutInflater inflater2 = LayoutInflater.from(mContext);
         final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
-//        overlayView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//
-//
-//            }
-//        });
 
         AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
         AppCompatImageButton playButton = overlayView.findViewById(R.id.play_button);
-        goLeft.setVisibility(View.VISIBLE);
-        goRight.setVisibility(View.VISIBLE);
+
+        goRight.setVisibility(View.INVISIBLE);
+        goLeft.setVisibility(View.INVISIBLE);
+
+        overlayView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggleVisibility(goLeft);
+                toggleVisibility(goRight);
+            }
+        });
+
+        overlayView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
+            public void onSwipeTop() {
+                stfalconImageViewer.dismiss();
+            }
+            public void onSwipeRight() {
+                decrementSlideshow(stfalconImageViewer);
+            }
+            public void onSwipeLeft() {
+                incrementSlideshow(stfalconImageViewer);
+            }
+            public void onSwipeBottom() {
+                stfalconImageViewer.dismiss();
+            }
+        });
 
         // If right chevron is clicked
         goRight.setOnClickListener(y -> {
-            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
-                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
-            }
+            incrementSlideshow(stfalconImageViewer);
         });
 
         // If left chevron is clicked
         goLeft.setOnClickListener(y -> {
-            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
-                stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
-            }
+            decrementSlideshow(stfalconImageViewer);
         });
 
-        // Play video button
+//         Play video button
         playButton.setOnClickListener(y -> {
             Log.d("debug", "overlay was clicked");
             MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
@@ -287,40 +339,24 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 finalImages.get().size()) : finalImages.get(), (imageView, image) ->
                 Glide.with(mContext).load(image).into(imageView))
                 .withOverlayView(overlayView)
-                .withDismissListener(() -> stfalconImageViewer = null)
+                .withDismissListener(() -> {
+                    stfalconImageViewer = null;
+                    slideshowTimer.cancel();
+                    slideshowTimer = null;
+                })
                 .withStartPosition(isWriteable ? position - 1 : position)
                 .show();
-
-        // Start Slideshow Thread
-        Thread t2 = new Thread(() -> {
-
-            // Traverse full album
-            while (true) {
-                try {
-                    int currIndex = stfalconImageViewer.currentPosition();
-                    if (finalImagesRaw.get().get(isWriteable ? currIndex - 1 : currIndex).getMediaMetadata().hasVideo()) {
-                        mContext.runOnUiThread(() -> playButton.setVisibility(View.VISIBLE));
-                    } else {
-                        mContext.runOnUiThread(() -> playButton.setVisibility(View.INVISIBLE));
-                    }
-                    // Sleep for x seconds, then switch picture
-                    Thread.sleep(autoplayDuration * 1000);
-                    if (mContext != null && stfalconImageViewer != null) {
-                        if (stfalconImageViewer.currentPosition() + 2 < finalImages.get().size()) {
-                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(
-                                    stfalconImageViewer.currentPosition() + 1));
-                        } else {
-                            mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(0));
-                        }
-                    } else {
-                        break;
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        t2.start();
+        slideshowTimer = new Timer();
+        slideshowTimer.scheduleAtFixedRate(new TimerTask() {
+                                               @Override
+                                               public void run() {
+                                                   incrementSlideshow(stfalconImageViewer);
+                                               }
+                                           },
+                //Set how long before to start calling the TimerTask (in milliseconds)
+                autoplayDuration * 1000,
+                //Set the amount of time between each execution (in milliseconds)
+                autoplayDuration * 1000);
     }
 
     // When refresh is called
@@ -556,5 +592,29 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         super.onDetach();
         actionbar.setTitle("Cabin Road Photos");
         actionbar.setNavigationIcon(null);
+    }
+
+    @Override
+    public void onPause() {
+        if (slideshowTimer != null) slideshowTimer.cancel();
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (slideshowTimer != null) {
+            slideshowTimer = new Timer();
+            slideshowTimer.scheduleAtFixedRate(new TimerTask() {
+                                                   @Override
+                                                   public void run() {
+                                                       incrementSlideshow(stfalconImageViewer);
+                                                   }
+                                               },
+                    //Set how long before to start calling the TimerTask (in milliseconds)
+                    autoplayDuration * 10,
+                    //Set the amount of time between each execution (in milliseconds)
+                    autoplayDuration * 1000);
+        }
     }
 }
