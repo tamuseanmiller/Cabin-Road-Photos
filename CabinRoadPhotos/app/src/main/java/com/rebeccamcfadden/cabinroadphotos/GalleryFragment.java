@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -17,9 +18,13 @@ import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowMetrics;
+import android.widget.TextClock;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -270,6 +275,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         } else button.setVisibility(View.VISIBLE);
     }
 
+    public int fetchWidth() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            WindowMetrics windowMetrics = requireActivity().getWindowManager().getCurrentWindowMetrics();
+            Insets insets = windowMetrics.getWindowInsets()
+                    .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars());
+            return windowMetrics.getBounds().width() - insets.left - insets.right;
+
+        } else {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            return displayMetrics.widthPixels;
+        }
+    }
+
 
     private void startSlideshow(int position) {
         LayoutInflater inflater2 = LayoutInflater.from(mContext);
@@ -278,16 +297,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
         AppCompatImageButton playButton = overlayView.findViewById(R.id.play_button);
+        TextClock clock = overlayView.findViewById(R.id.clock);
+        TextClock date = overlayView.findViewById(R.id.date);
+
+        int width = fetchWidth();
+        clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 25);
+        date.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 100);
+//        goRight.setMinimumHeight(width / 100);
 
         goRight.setVisibility(View.INVISIBLE);
         goLeft.setVisibility(View.INVISIBLE);
 
-        overlayView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                toggleVisibility(goLeft);
-                toggleVisibility(goRight);
-            }
+        overlayView.setOnClickListener(view -> {
+            toggleVisibility(goLeft);
+            toggleVisibility(goRight);
         });
 
         overlayView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
