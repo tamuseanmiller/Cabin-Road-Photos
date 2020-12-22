@@ -25,6 +25,7 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.*;
 
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 import static android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS;
 
@@ -124,6 +125,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         });
         mDimming.setOnPreferenceChangeListener((preference, newValue) -> {
             preferencesManager.storeBoolean("preventDim", (boolean) newValue);
+            if ((boolean) newValue) {
+                requireActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else {
+                requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
             return true;
         });
         return mView;

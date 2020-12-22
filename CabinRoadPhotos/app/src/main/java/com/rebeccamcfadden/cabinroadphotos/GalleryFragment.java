@@ -106,7 +106,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         autoplayDuration = new SharedPreferencesManager(getContext()).retrieveInt("autoplaySpeed", 20);
         Log.d("slideshow", "autoplay duration set to " + autoplayDuration + " seconds");
 
-        this.videoSaveDir = ((MainActivity) getActivity()).videoSaveDir;
+        this.videoSaveDir = MainActivity.videoSaveDir;
 
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
@@ -219,7 +219,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         Thread videoThread = new Thread(() -> {
             String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
             File directory = new File(albumDir);
-            if (! directory.exists()){
+            if (!directory.exists()) {
                 directory.mkdir();
             }
             for (Pair<String, String> video : videos) {
@@ -294,12 +294,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             public void onSwipeTop() {
                 stfalconImageViewer.dismiss();
             }
+
             public void onSwipeRight() {
                 decrementSlideshow(stfalconImageViewer);
             }
+
             public void onSwipeLeft() {
                 incrementSlideshow(stfalconImageViewer);
             }
+
             public void onSwipeBottom() {
                 stfalconImageViewer.dismiss();
             }
@@ -319,7 +322,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         playButton.setOnClickListener(y -> {
             Log.d("debug", "overlay was clicked");
             MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
-            if(m.getMediaMetadata().hasVideo()) {
+            if (m.getMediaMetadata().hasVideo()) {
                 Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
                 File fileLoc = new File(videoSaveDir + "/" + albumID + "/" + m.getId() + ".mp4");
                 Log.d("videoPlayback", "Playing file: " + fileLoc.getAbsolutePath());
@@ -327,7 +330,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 Uri data = isDownloaded ? Uri.parse(fileLoc.getAbsolutePath()) : Uri.parse(m.getBaseUrl() + "=dv");
                 intent.setDataAndType(data, "video/*");
                 intent.setFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                intent.putExtra (MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
+                intent.putExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
                 Toast.makeText(getContext(), "Playing video", Toast.LENGTH_LONG).show();
                 startActivity(intent);
             }
