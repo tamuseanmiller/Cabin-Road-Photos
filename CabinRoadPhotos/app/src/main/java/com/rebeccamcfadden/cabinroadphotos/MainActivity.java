@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
             getAccessTokenFromRefreshToken();
-
+            t1.start();
         }
 
         // Auto-refresh every 45 minutes
@@ -119,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         try {
             accessToken = creds.refreshAccessToken().getTokenValue();
-            t1.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
