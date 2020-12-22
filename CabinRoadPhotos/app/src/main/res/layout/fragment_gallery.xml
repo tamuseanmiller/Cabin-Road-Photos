@@ -55,11 +55,4 @@
         android:text="@string/start_slideshow"
         android:textColor="@color/white" />
 
-    <com.veinhorn.scrollgalleryview.ScrollGalleryView
-        android:id="@+id/scroll_gallery_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elevation="10dp"
-        android:visibility="invisible" />
-
 </RelativeLayout>
