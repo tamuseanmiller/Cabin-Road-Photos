@@ -169,31 +169,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             if (mContext != null)
                 mContext.runOnUiThread(() -> {
                     startSlideshowButton.setOnClickListener(v -> {
-
-                        /*ScrollGalleryView scrollGalleryView = mView.findViewById(R.id.scroll_gallery_view);
-                        scrollGalleryView.setVisibility(View.VISIBLE);
-
-                        hideSystemUI();
-
-                        scrollGalleryView
-                                .setThumbnailSize(200)
-                                .setZoom(true)
-                                .withHiddenThumbnails(true);
-
-                        ScrollGalleryView
-                                .from(scrollGalleryView)
-                                .settings(
-                                        GallerySettings
-                                                .from(mContext.getSupportFragmentManager())
-                                                .thumbnailSize(10)
-                                                .enableZoom(true)
-                                                .build()
-                                )
-                                .add(DSL.video(videos.get().get(0), R.drawable.placeholder_image))
-                                .add(DSL.images(notVideos.get()))
-                                .build();*/
-
-                        //                    hideSystemUI();
                         startSlideshow(0);
 
                     });
@@ -239,8 +214,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 // If you require it to make the entire directory path including parents,
                 // use directory.mkdirs(); here instead.
             }
-            videoSaveDir += "/" + albumID;
-            directory = new File(videoSaveDir);
+            String albumDir = videoSaveDir + "/" + albumID;
+            directory = new File(albumDir);
             if (! directory.exists()){
                 directory.mkdir();
                 // If you require it to make the entire directory path including parents,
@@ -250,11 +225,11 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 try {
                     String videoUrl = video.first;
                     String videoId = video.second;
-                    File file = new File(videoSaveDir + videoId + ".mp4");
+                    File file = new File(albumDir + "/" + videoId + ".mp4");
                     if (file.exists()) {
                         Log.d("fileDownload", "file " + videoId + ".mp4 exists");
                     } else {
-                        HttpDownloadUtility.downloadFile(videoUrl, videoSaveDir + "/", videoId);
+                        HttpDownloadUtility.downloadFile(videoUrl, albumDir + "/", videoId);
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -267,15 +242,17 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private void startSlideshow(int position) {
         LayoutInflater inflater2 = LayoutInflater.from(mContext);
         final View overlayView = inflater2.inflate(R.layout.gallery_overlay, null);
-        overlayView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d("debug", "overlay was clicked");
-            }
-        });
+//        overlayView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//
+//
+//            }
+//        });
 
         AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
+        AppCompatImageButton playButton = overlayView.findViewById(R.id.play_button);
         goLeft.setVisibility(View.VISIBLE);
         goRight.setVisibility(View.VISIBLE);
 
@@ -290,6 +267,22 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         goLeft.setOnClickListener(y -> {
             if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
                 stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+            }
+        });
+
+        // Play video button
+        playButton.setOnClickListener(y -> {
+            Log.d("debug", "overlay was clicked");
+            MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
+            if(m.getMediaMetadata().hasVideo()) {
+                Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
+                File fileLoc = new File(videoSaveDir + "/" + albumID + "/" + m.getId() + ".mp4");
+                Log.d("videoPlayback", "Playing file: " + fileLoc.getAbsolutePath());
+                boolean isDownloaded = fileLoc.exists();
+                Uri data = isDownloaded ? Uri.parse(fileLoc.getAbsolutePath()) : Uri.parse(m.getBaseUrl() + "=dv");
+                intent.setDataAndType(data, "video/*");
+                intent.setFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                startActivity(intent);
             }
         });
 
@@ -309,6 +302,12 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             // Traverse full album
             while (true) {
                 try {
+                    int currIndex = stfalconImageViewer.currentPosition();
+                    if (finalImagesRaw.get().get(isWriteable ? currIndex - 1 : currIndex).getMediaMetadata().hasVideo()) {
+                        playButton.setVisibility(View.VISIBLE);
+                    } else {
+                        playButton.setVisibility(View.INVISIBLE);
+                    }
                     // Sleep for x seconds, then switch picture
                     Thread.sleep(autoplayDuration * 1000);
                     if (mContext != null && stfalconImageViewer != null) {

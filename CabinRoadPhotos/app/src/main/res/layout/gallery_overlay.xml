@@ -62,4 +62,14 @@
         android:backgroundTint="@color/white"
         android:translationX="30dp" />
 
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/play_button"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/ic_baseline_play_circle_outline_24"
+        android:backgroundTint="@color/white"
+        android:translationX="30dp" />
+
 </RelativeLayout>
