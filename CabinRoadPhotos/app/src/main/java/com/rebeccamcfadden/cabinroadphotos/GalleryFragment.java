@@ -304,9 +304,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 try {
                     int currIndex = stfalconImageViewer.currentPosition();
                     if (finalImagesRaw.get().get(isWriteable ? currIndex - 1 : currIndex).getMediaMetadata().hasVideo()) {
-                        playButton.setVisibility(View.VISIBLE);
+                        mContext.runOnUiThread(() -> playButton.setVisibility(View.VISIBLE));
                     } else {
-                        playButton.setVisibility(View.INVISIBLE);
+                        mContext.runOnUiThread(() -> playButton.setVisibility(View.INVISIBLE));
                     }
                     // Sleep for x seconds, then switch picture
                     Thread.sleep(autoplayDuration * 1000);
