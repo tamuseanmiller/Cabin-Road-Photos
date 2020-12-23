@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -41,11 +42,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.dialog.MaterialDialogs;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.api.client.googleapis.util.Utils;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
+import com.google.photos.library.v1.proto.Filters;
 import com.google.photos.library.v1.proto.NewMediaItem;
 import com.google.photos.library.v1.proto.NewMediaItemResult;
+import com.google.photos.library.v1.proto.SearchMediaItemsRequest;
 import com.google.photos.library.v1.util.NewMediaItemFactory;
 import com.google.photos.types.proto.MediaItem;
 import com.google.rpc.Code;
@@ -303,6 +308,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
         AppCompatImageButton playButton = overlayView.findViewById(R.id.play_button);
+        AppCompatImageButton infoButton = overlayView.findViewById(R.id.info_button);
+        AppCompatImageButton shareButton = overlayView.findViewById(R.id.share_button);
+        AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
+        AppCompatImageButton slideshowButton = overlayView.findViewById(R.id.slideshow_button);
         TextClock clock = overlayView.findViewById(R.id.clock);
         TextClock date = overlayView.findViewById(R.id.date);
 
@@ -317,6 +326,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         overlayView.setOnClickListener(view -> {
             toggleVisibility(goLeft);
             toggleVisibility(goRight);
+            toggleVisibility(infoButton);
+            toggleVisibility(shareButton);
+            toggleVisibility(downloadButton);
+            toggleVisibility(slideshowButton);
         });
 
         overlayView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
@@ -335,6 +348,39 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             public void onSwipeBottom() {
                 stfalconImageViewer.dismiss();
             }
+        });
+
+        // If info button is clicked
+        infoButton.setOnClickListener(v -> {
+
+            String description = finalImagesRaw.get().get(position).getDescription();
+            String filename = finalImagesRaw.get().get(position).getFilename();
+            String size = finalImagesRaw.get().get(position).getMediaMetadata().getHeight() + "x" +
+                    finalImagesRaw.get().get(position).getMediaMetadata().getWidth();
+
+            MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext)
+                    .setIcon(R.drawable.information_outline)
+                    .setMessage("Title: " + filename + "\n" +
+                            "Description: " + description + "\n" +
+                            "Size: " + size)
+                    .setNeutralButton("Okay", (dialog, which) -> {
+                        dialog.dismiss();
+                    });
+        });
+
+        // If share button is clicked
+        shareButton.setOnClickListener(v -> {
+
+        });
+
+        // If download button is clicked
+        downloadButton.setOnClickListener(v -> {
+
+        });
+
+        // If slideshow button is clicked
+        slideshowButton.setOnClickListener(v -> {
+
         });
 
         // If right chevron is clicked

@@ -4,32 +4,8 @@
     xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:id="@+id/gallery_overlay"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <!--    <VideoView-->
-    <!--        android:id="@+id/videoview"-->
-    <!--        android:layout_width="0dp"-->
-    <!--        android:layout_height="0dp"-->
-    <!--        android:layout_margin="8dp"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintDimensionRatio="4:3"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent"/>-->
-
-    <!--    <TextView-->
-    <!--        android:id="@+id/buffering_textview"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:layout_margin="8dp"-->
-    <!--        android:text="Buffering..."-->
-    <!--        android:textSize="18sp"-->
-    <!--        android:textStyle="bold"-->
-    <!--        android:textColor="@android:color/white"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent"/>-->
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true">
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -82,9 +58,54 @@
         android:id="@+id/play_button"
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_centerInParent="true"
         android:alpha="0"
         android:background="@drawable/ic_baseline_play_circle_outline_24" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="20dp"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/slideshow_button"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_margin="7dp"
+            android:background="@drawable/play_box"
+            android:backgroundTint="@color/white"
+            android:visibility="invisible" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/download_button"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_margin="7dp"
+            android:background="@drawable/cloud_download"
+            android:backgroundTint="@color/white"
+            android:visibility="invisible" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/share_button"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_margin="7dp"
+            android:background="@drawable/share_variant"
+            android:backgroundTint="@color/white"
+            android:visibility="invisible" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/info_button"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_margin="7dp"
+            android:background="@drawable/information"
+            android:backgroundTint="@color/white"
+            android:visibility="invisible" />
+
+    </LinearLayout>
 
 </RelativeLayout>
