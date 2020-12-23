@@ -265,7 +265,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     private void decrementSlideshow(StfalconImageViewer stfalconImageViewer) {
         if (mContext != null && stfalconImageViewer != null) {
-            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+            if (stfalconImageViewer.currentPosition() > 0) {
                 mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1));
             } else {
                 mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1));
