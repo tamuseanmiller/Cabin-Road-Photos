@@ -32,7 +32,7 @@ import static android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS;
 public class SettingsFragment extends PreferenceFragmentCompat {
     private SwitchPreferenceCompat mDimming;
     private SeekBarPreference mBrightness;
-    private SwitchPreferenceCompat mAutoplay;
+//    private SwitchPreferenceCompat mAutoplay;
     private SeekBarPreference mAutoplaySpeed;
     //Content resolver used as a handle to the system's settings
     private ContentResolver cResolver;
@@ -87,8 +87,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             Log.e("Error", "Cannot access system brightness");
             e.printStackTrace();
         }
-        mAutoplay = getPreferenceManager().findPreference("autoplay");
-        mAutoplay.setDefaultValue(preferencesManager.retrieveBoolean("autoplay", false));
+//        mAutoplay = getPreferenceManager().findPreference("autoplay");
+//        mAutoplay.setDefaultValue(preferencesManager.retrieveBoolean("autoplay", false));
         mAutoplaySpeed = getPreferenceManager().findPreference("autoplaySpeed");
         mAutoplaySpeed.setDefaultValue(preferencesManager.retrieveInt("autoplaySpeed", 20));
 
@@ -119,10 +119,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             preferencesManager.storeInt("autoplaySpeed", (Integer) newValue);
             return true;
         });
-        mAutoplay.setOnPreferenceChangeListener((preference, newValue) -> {
-            preferencesManager.storeBoolean("autoplay", (boolean) newValue);
-            return true;
-        });
+//        mAutoplay.setOnPreferenceChangeListener((preference, newValue) -> {
+//            preferencesManager.storeBoolean("autoplay", (boolean) newValue);
+//            return true;
+//        });
         mDimming.setOnPreferenceChangeListener((preference, newValue) -> {
             preferencesManager.storeBoolean("preventDim", (boolean) newValue);
             if ((boolean) newValue) {
