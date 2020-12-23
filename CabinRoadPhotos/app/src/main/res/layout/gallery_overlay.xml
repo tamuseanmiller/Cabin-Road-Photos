@@ -72,9 +72,9 @@
 
         <androidx.appcompat.widget.AppCompatToggleButton
             android:id="@+id/slideshow_button"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:layout_margin="7dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_margin="15dp"
             android:background="@drawable/check"
             android:backgroundTint="@color/white"
             android:textOn=""

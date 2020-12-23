@@ -142,7 +142,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                      }
                      fetchVideos(videos);
                      mContext.runOnUiThread(() -> {
-                         downloadManageMenuItem.setIcon(R.drawable.ic_delete);
+                         Drawable nuke = ContextCompat.getDrawable(mContext, R.drawable.nuke);
+                         nuke.setTint(ContextCompat.getColor(mContext, R.color.white));
+                         downloadManageMenuItem.setIcon(nuke);
                      });
                      videosDownloaded = true;
                  } else {
@@ -481,7 +483,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                         ArrayList<Pair<String, String>> videoList = new ArrayList<>();
                         videoList.add(videoData);
                         fetchVideos(videoList);
-                        downloadButton.setImageResource(R.drawable.ic_delete);
+                        Drawable nuke = ContextCompat.getDrawable(mContext, R.drawable.nuke);
+                        nuke.setTint(ContextCompat.getColor(mContext, R.color.white));
+                        downloadButton.setBackgroundDrawable(nuke);
                         dialog.dismiss();
                     });
                     dialogBuilder.setNegativeButton("No", (dialog, which) -> {
