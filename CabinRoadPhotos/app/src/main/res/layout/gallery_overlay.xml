@@ -85,27 +85,27 @@
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/download_button"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:layout_margin="7dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_margin="15dp"
             android:background="@drawable/cloud_download"
             android:backgroundTint="@color/white"
             android:visibility="invisible" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/share_button"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:layout_margin="7dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_margin="15dp"
             android:background="@drawable/share_variant"
             android:backgroundTint="@color/white"
             android:visibility="invisible" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/info_button"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:layout_margin="7dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_margin="15dp"
             android:background="@drawable/information"
             android:backgroundTint="@color/white"
             android:visibility="invisible" />

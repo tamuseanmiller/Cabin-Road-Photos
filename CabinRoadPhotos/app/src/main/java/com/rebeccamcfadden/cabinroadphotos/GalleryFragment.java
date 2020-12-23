@@ -23,6 +23,9 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -64,6 +67,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
+import com.stfalcon.imageviewer.listeners.OnImageChangeListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -103,6 +107,8 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     private Toolbar actionbar;
     private File videoSaveDir;
+    private MenuItem downloadManageMenuItem;
+    private boolean videosDownloaded;
 
     public GalleryFragment() {
         albumID = null;
@@ -115,6 +121,60 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this.setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        downloadManageMenuItem = menu.add("Download Videos");
+        downloadManageMenuItem.setIcon(R.drawable.cloud_download);
+        downloadManageMenuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        downloadManageMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                 if (!videosDownloaded) {
+                     ArrayList<Pair<String, String>> videos = new ArrayList<>();
+                     for (MediaItem i : finalImagesRaw.get()) {
+                         if (i.getMediaMetadata().hasVideo()) {
+                             Pair<String, String> video = new Pair<>(i.getBaseUrl() + "=dv", i.getId());
+                             videos.add(video);
+                         }
+                     }
+                     fetchVideos(videos);
+                     mContext.runOnUiThread(() -> {
+                         downloadManageMenuItem.setIcon(R.drawable.ic_delete);
+                     });
+                     videosDownloaded = true;
+                 } else {
+                     // Create Dialog
+                     mContext.runOnUiThread(() -> {
+                         MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext);
+                         dialogBuilder.setTitle("Delete video");
+                         dialogBuilder.setMessage("Are you sure you want to remove all videos in this album from local storage? (Note: this will not remove the videos from Google Photos)");
+                         dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
+                             Thread delThread = new Thread(() -> {
+                                 String albumDir = videoSaveDir.getAbsolutePath();
+                                 for (MediaItem i : finalImagesRaw.get()) {
+                                     if (i.getMediaMetadata().hasVideo()) {
+                                         File file = new File(albumDir + "/" + i.getId() + ".mp4");
+                                         file.delete();
+                                     }
+                                 }
+                             });
+                             downloadManageMenuItem.setIcon(R.drawable.cloud_download);
+                             videosDownloaded = false;
+                             dialog.dismiss();
+                         });
+                         dialogBuilder.setNegativeButton("No", (dialog, which) -> {
+                             dialog.dismiss();
+                         });
+                         dialogBuilder.show();
+                     });
+                 }
+                return true;
+            }
+        });
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
@@ -125,6 +185,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         Log.d("slideshow", "autoplay duration set to " + autoplayDuration + " seconds");
 
         this.videoSaveDir = MainActivity.videoSaveDir;
+        videosDownloaded = false;
 
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_gallery, container, false);
@@ -151,7 +212,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
             // Get Media Items from Album and add to String List
             images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
-            ArrayList<Pair<String, String>> videos = new ArrayList<>();
             finalImages = new AtomicReference<>(new ArrayList<>());
             finalImagesRaw = new AtomicReference<>(new ArrayList<>());
 
@@ -162,15 +222,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
 
             for (MediaItem i : images.get()) {
-                if (i.getMediaMetadata().hasVideo()) {
-                    Pair<String, String> video = new Pair<>(i.getBaseUrl() + "=dv", i.getId());
-                    videos.add(video);
-                }
                 finalImagesRaw.get().add(i);
                 finalImages.get().add(i.getBaseUrl());
             }
-
-            fetchVideos(videos);
 
             // Initialize RecyclerView
             if (mContext != null) {
@@ -235,7 +289,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     private void fetchVideos(ArrayList<Pair<String, String>> videos) {
         Thread videoThread = new Thread(() -> {
-            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            String albumDir = videoSaveDir.getAbsolutePath();
             File directory = new File(albumDir);
             if (!directory.exists()) {
                 directory.mkdir();
@@ -261,21 +315,46 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private void incrementSlideshow(StfalconImageViewer stfalconImageViewer) {
         if (mContext != null && stfalconImageViewer != null) {
             if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
-                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1));
+                mContext.runOnUiThread(() -> {
+                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+                });
             } else {
-                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(0));
+                mContext.runOnUiThread(() -> {
+                    stfalconImageViewer.setCurrentPosition(0);
+                });
             }
         } else {
             Log.e("slideshow", "mContext or stfalconImageViewer were null");
         }
     }
 
+    private void setIcons(View overlayView, int currentPosition) {
+        AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
+        MediaItem video = finalImagesRaw.get().get(currentPosition);
+        if (video.getMediaMetadata().hasVideo()) {
+            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            File file = new File(albumDir + "/" + video.getId() + ".mp4");
+            if (!file.exists()) {
+                downloadButton.setImageResource(R.drawable.cloud_download);
+            } else {
+                downloadButton.setImageResource(R.drawable.ic_delete);
+            }
+            downloadButton.setVisibility(View.VISIBLE);
+        } else {
+            downloadButton.setVisibility(View.GONE);
+        }
+    }
+
     private void decrementSlideshow(StfalconImageViewer stfalconImageViewer) {
         if (mContext != null && stfalconImageViewer != null) {
             if (stfalconImageViewer.currentPosition() > 0) {
-                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1));
+                mContext.runOnUiThread(() -> {
+                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+                });
             } else {
-                mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1));
+                mContext.runOnUiThread(() -> {
+                    stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1);
+                });
             }
         } else {
             Log.e("slideshow", "mContext or stfalconImageViewer were null");
@@ -388,7 +467,45 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         // If download button is clicked
         downloadButton.setOnClickListener(v -> {
-
+            MediaItem video = finalImagesRaw.get().get(position);
+            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            File file = new File(albumDir + "/" + video.getId() + ".mp4");
+            if (!file.exists()) {
+                // Create Dialog
+                mContext.runOnUiThread(() -> {
+                    MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext);
+                    dialogBuilder.setTitle("Download video");
+                    dialogBuilder.setMessage("Are you sure you want to download this video?");
+                    dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
+                        Pair<String, String> videoData = new Pair<>(video.getBaseUrl() + "=dv", video.getId());
+                        ArrayList<Pair<String, String>> videoList = new ArrayList<>();
+                        videoList.add(videoData);
+                        fetchVideos(videoList);
+                        downloadButton.setImageResource(R.drawable.ic_delete);
+                        dialog.dismiss();
+                    });
+                    dialogBuilder.setNegativeButton("No", (dialog, which) -> {
+                        dialog.dismiss();
+                    });
+                    dialogBuilder.show();
+                });
+            } else {
+                // Create Dialog
+                mContext.runOnUiThread(() -> {
+                    MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext);
+                    dialogBuilder.setTitle("Delete video");
+                    dialogBuilder.setMessage("Are you sure you want to remove this video from local storage? (Note: this will not remove the video from Google Photos)");
+                    dialogBuilder.setPositiveButton("Yes", (dialog, which) -> {
+                        file.delete();
+                        downloadButton.setImageResource(R.drawable.cloud_download);
+                        dialog.dismiss();
+                    });
+                    dialogBuilder.setNegativeButton("No", (dialog, which) -> {
+                        dialog.dismiss();
+                    });
+                    dialogBuilder.show();
+                });
+            }
         });
 
         // If slideshow button is toggled
@@ -440,6 +557,12 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     slideshowTimer = null;
                 })
                 .withStartPosition(isWriteable ? position - 1 : position)
+                .withImageChangeListener(new OnImageChangeListener() {
+                    @Override
+                    public void onImageChange(int position) {
+                        setIcons(overlayView, position);
+                    }
+                })
                 .show();
         slideshowTimer = new Timer();
         slideshowTimer.scheduleAtFixedRate(new TimerTask() {

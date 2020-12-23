@@ -18,9 +18,9 @@
 
     <PreferenceCategory app:title="Slideshow">
 
-        <SwitchPreferenceCompat
-            app:key="autoplay"
-            app:title="Autoplay videos" />
+<!--        <SwitchPreferenceCompat-->
+<!--            app:key="autoplay"-->
+<!--            app:title="Autoplay videos" />-->
 
         <SeekBarPreference
             app:key="autoplaySpeed"
