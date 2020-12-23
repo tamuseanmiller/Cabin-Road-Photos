@@ -3,6 +3,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 import android.Manifest;
 import android.content.ClipData;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -41,6 +42,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.api.client.googleapis.util.Utils;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
 import com.google.photos.library.v1.proto.NewMediaItem;
 import com.google.photos.library.v1.proto.NewMediaItemResult;
@@ -57,7 +59,11 @@ import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -445,6 +451,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                             //In case you need image's absolute path
                             String pathToFile = getImageFilePath(uri);
+                            if (pathToFile.equals("Not found")) {
+                                pathToFile = getPathFromInputStreamUri(mContext, uri);
+                            }
                             Log.d("media_path", pathToFile);
 
                             String file_extn = pathToFile.substring(pathToFile.lastIndexOf(".") + 1);
@@ -524,6 +533,62 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
         }
 
+    }
+
+    public static String getPathFromInputStreamUri(Context context, Uri uri) {
+        InputStream inputStream = null;
+        String filePath = null;
+
+        if (uri.getAuthority() != null) {
+            try {
+                inputStream = context.getContentResolver().openInputStream(uri);
+                File photoFile = createTemporalFileFrom(inputStream, context);
+
+                filePath = photoFile.getPath();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return filePath;
+    }
+
+    private static File createTemporalFileFrom(InputStream inputStream, Context context) throws IOException {
+        File targetFile = null;
+
+        if (inputStream != null) {
+            int read;
+            byte[] buffer = new byte[8 * 1024];
+
+            targetFile = createTemporalFile(context);
+            OutputStream outputStream = new FileOutputStream(targetFile);
+
+            while ((read = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, read);
+            }
+            outputStream.flush();
+
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return targetFile;
+    }
+
+    private static File createTemporalFile(Context context) {
+        return new File(new ContextWrapper(context).getFilesDir(), "tempPicture.jpg");
     }
 
     public String getImageFilePath(Uri uri) {
