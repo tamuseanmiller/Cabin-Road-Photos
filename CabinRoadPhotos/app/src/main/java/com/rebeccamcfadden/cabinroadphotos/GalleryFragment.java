@@ -109,6 +109,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private File videoSaveDir;
     private MenuItem downloadManageMenuItem;
     private boolean videosDownloaded;
+    private boolean videoDownloaded;
 
     public GalleryFragment() {
         albumID = null;
@@ -289,6 +290,25 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         return mView;
     }
 
+    private void setIcons(View overlayView, int currentPosition) {
+        AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
+        MediaItem video = finalImagesRaw.get().get(currentPosition);
+        if (video.getMediaMetadata().hasVideo()) {
+            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            File file = new File(albumDir + "/" + video.getId() + ".mp4");
+            if (!file.exists()) {
+                downloadButton.setImageResource(R.drawable.cloud_download);
+                videoDownloaded = false;
+            } else {
+                downloadButton.setImageResource(R.drawable.ic_delete);
+                videoDownloaded = true;
+            }
+            downloadButton.setVisibility(View.INVISIBLE);
+        } else {
+            downloadButton.setVisibility(View.GONE);
+        }
+    }
+
     private void fetchVideos(ArrayList<Pair<String, String>> videos) {
         Thread videoThread = new Thread(() -> {
             String albumDir = videoSaveDir.getAbsolutePath();
@@ -330,23 +350,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         }
     }
 
-    private void setIcons(View overlayView, int currentPosition) {
-        AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
-        MediaItem video = finalImagesRaw.get().get(currentPosition);
-        if (video.getMediaMetadata().hasVideo()) {
-            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
-            File file = new File(albumDir + "/" + video.getId() + ".mp4");
-            if (!file.exists()) {
-                downloadButton.setImageResource(R.drawable.cloud_download);
-            } else {
-                downloadButton.setImageResource(R.drawable.ic_delete);
-            }
-            downloadButton.setVisibility(View.VISIBLE);
-        } else {
-            downloadButton.setVisibility(View.GONE);
-        }
-    }
-
     private void decrementSlideshow(StfalconImageViewer stfalconImageViewer) {
         if (mContext != null && stfalconImageViewer != null) {
             if (stfalconImageViewer.currentPosition() > 0) {
@@ -366,7 +369,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     private void toggleVisibility(View button) {
         if (button.getVisibility() == View.VISIBLE) {
             button.setVisibility(View.INVISIBLE);
-        } else button.setVisibility(View.VISIBLE);
+        } else if (button.getVisibility() != View.GONE) {
+            button.setVisibility(View.VISIBLE);
+        }
     }
 
     public int fetchWidth() {
@@ -472,7 +477,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             MediaItem video = finalImagesRaw.get().get(position);
             String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
             File file = new File(albumDir + "/" + video.getId() + ".mp4");
-            if (!file.exists()) {
+            if (!videoDownloaded) {
                 // Create Dialog
                 mContext.runOnUiThread(() -> {
                     MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext);
@@ -568,6 +573,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     }
                 })
                 .show();
+        setIcons(overlayView, isWriteable ? position - 1 : position);
         slideshowTimer = new Timer();
         slideshowTimer.scheduleAtFixedRate(new TimerTask() {
                                                @Override
