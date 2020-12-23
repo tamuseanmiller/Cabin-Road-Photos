@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.cabriole.decorator.ColumnProvider;
 import io.cabriole.decorator.GridMarginDecoration;
 
-import static com.rebeccamcfadden.cabinroadphotos.GalleryFragment.calculateNoOfColumns;
 import static com.rebeccamcfadden.cabinroadphotos.MainActivity.photosLibraryClient;
 
 public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums.ItemClickListener {
@@ -64,7 +63,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             albumAdapter = new RecyclerViewAdapterAlbums(getContext(), albums.get());
             albumRecycler = mView.findViewById(R.id.album_recycler);
             albumAdapter.setClickListener(this);
-            int numColumns = calculateNoOfColumns(getActivity(), 150);
+            int numColumns = GalleryFragment.calculateNoOfColumns(getActivity(), 150);
             ColumnProvider col = () -> numColumns;
 
             // Initialize Recylerview
@@ -169,7 +168,7 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         super.onConfigurationChanged(newConfig);
 
         if (albumAdapter != null) {
-            int numColumns = calculateNoOfColumns(requireActivity(), 150);
+            int numColumns = GalleryFragment.calculateNoOfColumns(requireActivity(), 150);
             ColumnProvider col = () -> numColumns;
             albumRecycler.setLayoutManager(new GridLayoutManager(getActivity(), numColumns));
             albumRecycler.addItemDecoration(new GridMarginDecoration(0, col, GridLayoutManager.VERTICAL, false, null));
@@ -182,11 +181,13 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
         List<Album> preAlbum = new ArrayList<>();
         Set<String> IDs = new HashSet<>();
         for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
-            preAlbum.add(album);
-            IDs.add(album.getId());
+            if (!album.getTitle().isEmpty()) {
+                preAlbum.add(album);
+                IDs.add(album.getId());
+            }
         }
         for (Album album : photosLibraryClient.listSharedAlbums().iterateAll()) {
-            if (!IDs.contains(album.getId())) preAlbum.add(album);
+            if (!IDs.contains(album.getId()) && !album.getTitle().isEmpty()) preAlbum.add(album);
         }
         Collections.sort(preAlbum, (album1, album2) -> {
             if (album1.getTitle().isEmpty() && album2.getTitle().isEmpty()) {
@@ -202,9 +203,9 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
     }
 
     private void refreshAlbums() {
+        ArrayList<Album> temp = new ArrayList<>(getAllAlbums());
         albums.get().clear();
-        for (Album album : getAllAlbums()) {
-            albums.get().add(album);
-        }
+        albums.get().addAll(temp);
+        temp.clear();
     }
 }

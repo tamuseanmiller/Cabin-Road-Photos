@@ -70,13 +70,17 @@
         android:layout_margin="20dp"
         android:orientation="horizontal">
 
-        <androidx.appcompat.widget.AppCompatImageButton
+        <androidx.appcompat.widget.AppCompatToggleButton
             android:id="@+id/slideshow_button"
             android:layout_width="25dp"
             android:layout_height="25dp"
             android:layout_margin="7dp"
-            android:background="@drawable/play_box"
+            android:background="@drawable/check"
             android:backgroundTint="@color/white"
+            android:textOn=""
+            android:textOff=""
+            android:focusable="false"
+            android:focusableInTouchMode="false"
             android:visibility="invisible" />
 
         <androidx.appcompat.widget.AppCompatImageButton

@@ -2,6 +2,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 
 import android.content.Context;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,10 +38,16 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
         return new ViewHolder(view);
     }
 
+    public int dpToPx(int dp) {
+        DisplayMetrics displayMetrics = mInflater.getContext().getResources().getDisplayMetrics();
+        return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterAlbums.ViewHolder holder, int position) {
-        Glide.with(holder.albumImage.getContext()).load(mData.get(position).getCoverPhotoBaseUrl()).into(holder.albumImage);
+        String url = mData.get(position).getCoverPhotoBaseUrl() + "=w" + dpToPx(150) + "-h" + dpToPx(100) + "-c";
+        Glide.with(holder.albumImage.getContext()).load(url).into(holder.albumImage);
         if (mData.get(position).getTitle().length() > 26) {
             holder.albumName.setText(mData.get(position).getTitle().substring(0, 25) + "...");
         } else {
@@ -95,6 +102,12 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
     // convenience method for getting data at click position
     Album getItem(int id) {
         return mData.get(id);
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        Glide.with(mInflater.getContext()).clear(holder.albumImage);
+        super.onViewRecycled(holder);
     }
 
     // allows clicks events to be caught

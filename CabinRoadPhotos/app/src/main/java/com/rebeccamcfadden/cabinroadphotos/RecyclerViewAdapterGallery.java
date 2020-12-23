@@ -2,6 +2,7 @@ package com.rebeccamcfadden.cabinroadphotos;
 
 import android.content.Context;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +29,6 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
         mData = albums;
     }
 
-
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -36,11 +36,17 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
         return new ViewHolder(view);
     }
 
+    public int dpToPx(int dp) {
+        DisplayMetrics displayMetrics = mInflater.getContext().getResources().getDisplayMetrics();
+        return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterGallery.ViewHolder holder, int position) {
         if (!mData.get(position).equals("ADDIMAGEPICTURE")) {
-            Glide.with(holder.galleryImage.getContext()).load(mData.get(position)).into(holder.galleryImage);
+            String url = mData.get(position) + "=w" + dpToPx(75) + "-h" + dpToPx(75) + "-c";
+            Glide.with(holder.galleryImage.getContext()).load(url).into(holder.galleryImage);
             holder.galleryImageCard.setElevation(1);
 
         } else {
@@ -89,6 +95,12 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
                 mClickListener.onItemClick(view, getAdapterPosition());
             }
         }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        Glide.with(mInflater.getContext()).clear(holder.galleryImage);
+        super.onViewRecycled(holder);
     }
 
     // convenience method for getting data at click position

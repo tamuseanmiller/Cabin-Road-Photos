@@ -33,6 +33,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageButton;
+import androidx.appcompat.widget.AppCompatToggleButton;
 import androidx.appcompat.widget.Toolbar;
 import androidx.collection.ArraySet;
 import androidx.core.app.ActivityCompat;
@@ -281,7 +282,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         }
     }
 
-    private void toggleVisibility(AppCompatImageButton button) {
+    private void toggleVisibility(View button) {
         if (button.getVisibility() == View.VISIBLE) {
             button.setVisibility(View.INVISIBLE);
         } else button.setVisibility(View.VISIBLE);
@@ -312,7 +313,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         AppCompatImageButton infoButton = overlayView.findViewById(R.id.info_button);
         AppCompatImageButton shareButton = overlayView.findViewById(R.id.share_button);
         AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
-        AppCompatImageButton slideshowButton = overlayView.findViewById(R.id.slideshow_button);
+        AppCompatToggleButton slideshowButton = overlayView.findViewById(R.id.slideshow_button);
         TextClock clock = overlayView.findViewById(R.id.clock);
         TextClock date = overlayView.findViewById(R.id.date);
 
@@ -342,9 +343,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 decrementSlideshow(stfalconImageViewer);
             }
 
-            public void onSwipeLeft() {
-                incrementSlideshow(stfalconImageViewer);
-            }
+            public void onSwipeLeft() { incrementSlideshow(stfalconImageViewer); }
 
             public void onSwipeBottom() {
                 stfalconImageViewer.dismiss();
@@ -392,9 +391,13 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         });
 
-        // If slideshow button is clicked
+        // If slideshow button is toggled
         slideshowButton.setOnClickListener(v -> {
-
+            if (slideshowButton.isChecked()) {
+                pauseTask();
+            } else {
+                resumeTask();
+            }
         });
 
         // If right chevron is clicked
@@ -407,7 +410,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             decrementSlideshow(stfalconImageViewer);
         });
 
-//         Play video button
+        // Play video button
         playButton.setOnClickListener(y -> {
             Log.d("debug", "overlay was clicked");
             MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
@@ -747,7 +750,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     @Override
     public void onPause() {
-        if (slideshowTimer != null) slideshowTimer.cancel();
+        if (slideshowTimer != null) pauseTask();
         super.onPause();
     }
 
@@ -755,17 +758,25 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     public void onResume() {
         super.onResume();
         if (slideshowTimer != null) {
-            slideshowTimer = new Timer();
-            slideshowTimer.scheduleAtFixedRate(new TimerTask() {
-                                                   @Override
-                                                   public void run() {
-                                                       incrementSlideshow(stfalconImageViewer);
-                                                   }
-                                               },
-                    //Set how long before to start calling the TimerTask (in milliseconds)
-                    autoplayDuration * 10,
-                    //Set the amount of time between each execution (in milliseconds)
-                    autoplayDuration * 1000);
+            resumeTask();
         }
+    }
+
+    public void pauseTask() {
+        slideshowTimer.cancel();
+    }
+
+    public void resumeTask() {
+        slideshowTimer = new Timer();
+        slideshowTimer.scheduleAtFixedRate(new TimerTask() {
+                                               @Override
+                                               public void run() {
+                                                   incrementSlideshow(stfalconImageViewer);
+                                               }
+                                           },
+                //Set how long before to start calling the TimerTask (in milliseconds)
+                autoplayDuration * 1000,
+                //Set the amount of time between each execution (in milliseconds)
+                autoplayDuration * 1000);
     }
 }
