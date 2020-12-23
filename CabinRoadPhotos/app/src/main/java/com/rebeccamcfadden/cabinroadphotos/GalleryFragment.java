@@ -7,6 +7,7 @@ import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -354,23 +355,36 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         infoButton.setOnClickListener(v -> {
 
             String description = finalImagesRaw.get().get(position).getDescription();
+            if (description.isEmpty()) {
+                description = "Downloaded by Cabin Road Photos";
+            }
             String filename = finalImagesRaw.get().get(position).getFilename();
             String size = finalImagesRaw.get().get(position).getMediaMetadata().getHeight() + "x" +
                     finalImagesRaw.get().get(position).getMediaMetadata().getWidth();
+            Drawable icon = ContextCompat.getDrawable(mContext, R.drawable.information_outline);
+            icon.setTint(ContextCompat.getColor(mContext, R.color.grey));
 
             MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext)
                     .setIcon(R.drawable.information_outline)
                     .setMessage("Title: " + filename + "\n" +
                             "Description: " + description + "\n" +
                             "Size: " + size)
+                    .setTitle("Information")
                     .setNeutralButton("Okay", (dialog, which) -> {
                         dialog.dismiss();
                     });
+
+            dialogBuilder.show();
         });
 
         // If share button is clicked
         shareButton.setOnClickListener(v -> {
-
+            Intent sendIntent = new Intent();
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_TEXT, "Shared with Cabin Road Photos! " +
+                    finalImagesRaw.get().get(position).getBaseUrl()); // Simple text and URL to share
+            sendIntent.setType("text/plain");
+            startActivity(sendIntent);
         });
 
         // If download button is clicked
