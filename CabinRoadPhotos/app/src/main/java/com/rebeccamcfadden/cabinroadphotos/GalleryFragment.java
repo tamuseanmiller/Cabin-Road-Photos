@@ -3,6 +3,8 @@ package com.rebeccamcfadden.cabinroadphotos;
 import android.Manifest;
 import android.content.ClipData;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -20,14 +22,11 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowMetrics;
 import android.widget.TextClock;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -43,10 +42,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.dialog.MaterialDialogs;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.api.client.googleapis.util.Utils;
 import com.google.photos.library.v1.proto.BatchCreateMediaItemsResponse;
+import com.google.photos.library.v1.proto.Filters;
 import com.google.photos.library.v1.proto.NewMediaItem;
 import com.google.photos.library.v1.proto.NewMediaItemResult;
+import com.google.photos.library.v1.proto.SearchMediaItemsRequest;
 import com.google.photos.library.v1.util.NewMediaItemFactory;
 import com.google.photos.types.proto.MediaItem;
 import com.google.rpc.Code;
@@ -60,7 +64,11 @@ import com.squareup.okhttp.Response;
 import com.stfalcon.imageviewer.StfalconImageViewer;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -105,7 +113,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setHasOptionsMenu(true);
     }
 
     @Override
@@ -211,9 +218,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                     // Check if slideshow is happening
                     if (stfalconImageViewer != null) {
-                        if (mContext != null)
-                            mContext.runOnUiThread(() -> { startSlideshow(stfalconImageViewer.currentPosition()); });
-                        else Log.e("refreshMedia", "context was null so slideshow could not be started on UI thread");
+                        startSlideshow(stfalconImageViewer.currentPosition());
                     }
 
                 } catch (InterruptedException e) {
@@ -265,7 +270,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     private void decrementSlideshow(StfalconImageViewer stfalconImageViewer) {
         if (mContext != null && stfalconImageViewer != null) {
-            if (finalImages.get().size() - 1 >= stfalconImageViewer.currentPosition()) {
+            if (stfalconImageViewer.currentPosition() > 0) {
                 mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1));
             } else {
                 mContext.runOnUiThread(() -> stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1));
@@ -304,9 +309,11 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
         AppCompatImageButton playButton = overlayView.findViewById(R.id.play_button);
         AppCompatImageButton infoButton = overlayView.findViewById(R.id.info_button);
+        AppCompatImageButton shareButton = overlayView.findViewById(R.id.share_button);
+        AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
+        AppCompatImageButton slideshowButton = overlayView.findViewById(R.id.slideshow_button);
         TextClock clock = overlayView.findViewById(R.id.clock);
         TextClock date = overlayView.findViewById(R.id.date);
-//        TextView infoText = overlayView.findViewById(R.id.info_text);
 
         int width = fetchWidth();
         clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 25);
@@ -315,15 +322,14 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         goRight.setVisibility(View.INVISIBLE);
         goLeft.setVisibility(View.INVISIBLE);
-//        infoButton.setVisibility(View.INVISIBLE);
 
         overlayView.setOnClickListener(view -> {
             toggleVisibility(goLeft);
             toggleVisibility(goRight);
             toggleVisibility(infoButton);
-//            if (infoText.getVisibility() == View.VISIBLE) {
-//                infoText.setVisibility(View.GONE);
-//            }
+            toggleVisibility(shareButton);
+            toggleVisibility(downloadButton);
+            toggleVisibility(slideshowButton);
         });
 
         overlayView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
@@ -344,6 +350,39 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
         });
 
+        // If info button is clicked
+        infoButton.setOnClickListener(v -> {
+
+            String description = finalImagesRaw.get().get(position).getDescription();
+            String filename = finalImagesRaw.get().get(position).getFilename();
+            String size = finalImagesRaw.get().get(position).getMediaMetadata().getHeight() + "x" +
+                    finalImagesRaw.get().get(position).getMediaMetadata().getWidth();
+
+            MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(mContext)
+                    .setIcon(R.drawable.information_outline)
+                    .setMessage("Title: " + filename + "\n" +
+                            "Description: " + description + "\n" +
+                            "Size: " + size)
+                    .setNeutralButton("Okay", (dialog, which) -> {
+                        dialog.dismiss();
+                    });
+        });
+
+        // If share button is clicked
+        shareButton.setOnClickListener(v -> {
+
+        });
+
+        // If download button is clicked
+        downloadButton.setOnClickListener(v -> {
+
+        });
+
+        // If slideshow button is clicked
+        slideshowButton.setOnClickListener(v -> {
+
+        });
+
         // If right chevron is clicked
         goRight.setOnClickListener(y -> {
             incrementSlideshow(stfalconImageViewer);
@@ -353,20 +392,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         goLeft.setOnClickListener(y -> {
             decrementSlideshow(stfalconImageViewer);
         });
-
-        // Show info panel
-//        infoButton.setOnClickListener(y -> {
-//            mContext.runOnUiThread(() -> {
-//                MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
-//                if (infoText.getVisibility() == View.GONE || infoText.getVisibility() == View.INVISIBLE) {
-//                    infoText.setText("Description: " + m.getDescription());
-//                    infoText.setVisibility(View.VISIBLE);
-//                } else {
-//                    infoText.setVisibility(View.GONE);
-//                }
-//
-//            });
-//        });
 
 //         Play video button
         playButton.setOnClickListener(y -> {
@@ -414,7 +439,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     // When refresh is called
     private void onRefresh() {
-        mContext.runOnUiThread(() -> refreshGallery.setRefreshing(true));
+        refreshGallery.setRefreshing(true);
         Thread t3 = new Thread(() -> {
 
             // Grab images in album
@@ -472,6 +497,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                             //In case you need image's absolute path
                             String pathToFile = getImageFilePath(uri);
+                            if (pathToFile.equals("Not found")) {
+                                pathToFile = getPathFromInputStreamUri(mContext, uri);
+                            }
                             Log.d("media_path", pathToFile);
 
                             String file_extn = pathToFile.substring(pathToFile.lastIndexOf(".") + 1);
@@ -553,6 +581,62 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     }
 
+    public static String getPathFromInputStreamUri(Context context, Uri uri) {
+        InputStream inputStream = null;
+        String filePath = null;
+
+        if (uri.getAuthority() != null) {
+            try {
+                inputStream = context.getContentResolver().openInputStream(uri);
+                File photoFile = createTemporalFileFrom(inputStream, context);
+
+                filePath = photoFile.getPath();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return filePath;
+    }
+
+    private static File createTemporalFileFrom(InputStream inputStream, Context context) throws IOException {
+        File targetFile = null;
+
+        if (inputStream != null) {
+            int read;
+            byte[] buffer = new byte[8 * 1024];
+
+            targetFile = createTemporalFile(context);
+            OutputStream outputStream = new FileOutputStream(targetFile);
+
+            while ((read = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, read);
+            }
+            outputStream.flush();
+
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return targetFile;
+    }
+
+    private static File createTemporalFile(Context context) {
+        return new File(new ContextWrapper(context).getFilesDir(), "tempPicture.jpg");
+    }
+
     public String getImageFilePath(Uri uri) {
         String result = null;
         String[] proj = {MediaStore.Images.Media.DATA};
@@ -574,6 +658,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     // When an image is clicked
     @Override
     public void onItemClick(View view, int position) {
+
         if (galleryAdapter.getItem(position).equals("ADDIMAGEPICTURE")) {
             try {
                 // Check if we have permission to read images from storage
@@ -667,15 +752,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     autoplayDuration * 10,
                     //Set the amount of time between each execution (in milliseconds)
                     autoplayDuration * 1000);
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (stfalconImageViewer != null) {
-            stfalconImageViewer.dismiss();
-            stfalconImageViewer = null;
         }
     }
 }
