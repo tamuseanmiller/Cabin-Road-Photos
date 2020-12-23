@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -61,6 +62,11 @@ public class MainActivity extends AppCompatActivity {
         prefs = new SharedPreferencesManager(getApplicationContext());
         Intent intent = getIntent();
         idToken = intent.getStringExtra("idToken");
+
+        // set auto dimming flags
+        if (prefs.retrieveBoolean("preventDim", false)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
 
         // Toolbar customization
         Toolbar toolbar = findViewById(R.id.toolbar_main);

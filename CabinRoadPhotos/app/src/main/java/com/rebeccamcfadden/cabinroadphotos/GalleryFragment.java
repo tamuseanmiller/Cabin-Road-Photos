@@ -20,11 +20,14 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowMetrics;
 import android.widget.TextClock;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -102,6 +105,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        setHasOptionsMenu(true);
     }
 
     @Override
@@ -207,7 +211,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                     // Check if slideshow is happening
                     if (stfalconImageViewer != null) {
-                        startSlideshow(stfalconImageViewer.currentPosition());
+                        if (mContext != null)
+                            mContext.runOnUiThread(() -> { startSlideshow(stfalconImageViewer.currentPosition()); });
+                        else Log.e("refreshMedia", "context was null so slideshow could not be started on UI thread");
                     }
 
                 } catch (InterruptedException e) {
@@ -297,8 +303,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         AppCompatImageButton goRight = overlayView.findViewById(R.id.go_right);
         AppCompatImageButton goLeft = overlayView.findViewById(R.id.go_left);
         AppCompatImageButton playButton = overlayView.findViewById(R.id.play_button);
+        AppCompatImageButton infoButton = overlayView.findViewById(R.id.info_button);
         TextClock clock = overlayView.findViewById(R.id.clock);
         TextClock date = overlayView.findViewById(R.id.date);
+//        TextView infoText = overlayView.findViewById(R.id.info_text);
 
         int width = fetchWidth();
         clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 25);
@@ -307,10 +315,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
         goRight.setVisibility(View.INVISIBLE);
         goLeft.setVisibility(View.INVISIBLE);
+//        infoButton.setVisibility(View.INVISIBLE);
 
         overlayView.setOnClickListener(view -> {
             toggleVisibility(goLeft);
             toggleVisibility(goRight);
+            toggleVisibility(infoButton);
+//            if (infoText.getVisibility() == View.VISIBLE) {
+//                infoText.setVisibility(View.GONE);
+//            }
         });
 
         overlayView.setOnTouchListener(new OnSwipeTouchListener(mContext) {
@@ -340,6 +353,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         goLeft.setOnClickListener(y -> {
             decrementSlideshow(stfalconImageViewer);
         });
+
+        // Show info panel
+//        infoButton.setOnClickListener(y -> {
+//            mContext.runOnUiThread(() -> {
+//                MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
+//                if (infoText.getVisibility() == View.GONE || infoText.getVisibility() == View.INVISIBLE) {
+//                    infoText.setText("Description: " + m.getDescription());
+//                    infoText.setVisibility(View.VISIBLE);
+//                } else {
+//                    infoText.setVisibility(View.GONE);
+//                }
+//
+//            });
+//        });
 
 //         Play video button
         playButton.setOnClickListener(y -> {
@@ -387,7 +414,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     // When refresh is called
     private void onRefresh() {
-        refreshGallery.setRefreshing(true);
+        mContext.runOnUiThread(() -> refreshGallery.setRefreshing(true));
         Thread t3 = new Thread(() -> {
 
             // Grab images in album
@@ -547,7 +574,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
     // When an image is clicked
     @Override
     public void onItemClick(View view, int position) {
-
         if (galleryAdapter.getItem(position).equals("ADDIMAGEPICTURE")) {
             try {
                 // Check if we have permission to read images from storage
@@ -641,6 +667,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     autoplayDuration * 10,
                     //Set the amount of time between each execution (in milliseconds)
                     autoplayDuration * 1000);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (stfalconImageViewer != null) {
+            stfalconImageViewer.dismiss();
+            stfalconImageViewer = null;
         }
     }
 }
