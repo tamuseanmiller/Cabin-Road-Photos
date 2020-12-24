@@ -46,11 +46,16 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterAlbums.ViewHolder holder, int position) {
         CustomAlbum a = mData.get(position);
-        String url = a.getCoverPhotoBaseUrl() +
-                ((a.getId() == "fullLibrary") ?
-                        "?height=" + dpToPx(100) + "&width=" + dpToPx(150)
-                        : "=w" + dpToPx(150) + "-h" + dpToPx(100) + "-c");
-        Glide.with(holder.albumImage.getContext()).load(url).into(holder.albumImage);
+        String url = a.getCoverPhotoBaseUrl();
+//                +((a.getId() == "fullLibrary") ?
+//                        "?height=" + dpToPx(100) + "&width=" + dpToPx(150)
+//                        : "=w" + dpToPx(150) + "-h" + dpToPx(100) + "-c");
+        Glide.with(holder.albumImage.getContext())
+                .load(url)
+                .thumbnail(0.1f)
+                .override(dpToPx(150), dpToPx(100)) // resizes the image to these dimensions (in pixel)
+                .centerCrop()
+                .into(holder.albumImage);
         if (mData.get(position).getTitle().length() > 26) {
             holder.albumName.setText(mData.get(position).getTitle().substring(0, 25) + "...");
         } else {

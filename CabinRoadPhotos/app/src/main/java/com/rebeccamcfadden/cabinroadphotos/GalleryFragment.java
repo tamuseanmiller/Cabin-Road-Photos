@@ -392,6 +392,20 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         }
     }
 
+    public int fetchHeight() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            WindowMetrics windowMetrics = requireActivity().getWindowManager().getCurrentWindowMetrics();
+            Insets insets = windowMetrics.getWindowInsets()
+                    .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars());
+            return windowMetrics.getBounds().width() - insets.top - insets.bottom;
+
+        } else {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            return displayMetrics.heightPixels;
+        }
+    }
+
 
     private void startSlideshow(int position) {
         LayoutInflater inflater2 = LayoutInflater.from(mContext);
@@ -408,8 +422,9 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         TextClock date = overlayView.findViewById(R.id.date);
 
         int width = fetchWidth();
-        clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 25);
-        date.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 100);
+        int height = fetchHeight();
+        clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 15);
+        date.setTextSize(TypedValue.COMPLEX_UNIT_SP, width / 50);
 //        goRight.setMinimumHeight(width / 100);
 
         goRight.setVisibility(View.INVISIBLE);
@@ -562,7 +577,10 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         stfalconImageViewer = new StfalconImageViewer.Builder<>(
                 getContext(), isWriteable ? finalImages.get().subList(1,
                 finalImages.get().size()) : finalImages.get(), (imageView, image) ->
-                Glide.with(mContext).load(image).into(imageView))
+                Glide.with(mContext).load(image)
+                        .override(height, width) // resizes the image to these dimensions (in pixel)
+                        .fitCenter()
+                        .into(imageView))
                 .withOverlayView(overlayView)
                 .withDismissListener(() -> {
                     stfalconImageViewer = null;
@@ -607,7 +625,6 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             // Add all URLS to temp for finalImages
             ArrayList<String> temp = new ArrayList<>();
             ArrayList<MediaItem> temp2 = new ArrayList<>();
-            ArrayList<Pair<String, String>> videos = new ArrayList<>();
 
             // If album is writeable, add an extra image
             if (isWriteable) {
@@ -615,17 +632,12 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             }
 
             for (MediaItem i : images.get()) {
-                if (i.getMediaMetadata().hasVideo()) {
-                    Pair<String, String> video = new Pair<>(i.getBaseUrl() + "=dv", i.getId());
-                    videos.add(video);
-                }
                 temp.add(i.getBaseUrl());
                 temp2.add(i);
             }
 
             finalImages.get().addAll(temp);
             finalImagesRaw.get().addAll(temp2);
-            fetchVideos(videos);
             temp.clear();
             temp2.clear();
 

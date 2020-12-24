@@ -45,8 +45,13 @@ public class RecyclerViewAdapterGallery extends RecyclerView.Adapter<RecyclerVie
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterGallery.ViewHolder holder, int position) {
         if (!mData.get(position).equals("ADDIMAGEPICTURE")) {
-            String url = mData.get(position) + "=w" + dpToPx(75) + "-h" + dpToPx(75) + "-c";
-            Glide.with(holder.galleryImage.getContext()).load(url).into(holder.galleryImage);
+            String url = mData.get(position)/* + "=w" + dpToPx(75) + "-h" + dpToPx(75) + "-c"*/;
+            Glide.with(holder.galleryImage.getContext())
+                    .load(url)
+                    .thumbnail(0.1f)
+                    .override(dpToPx(75), dpToPx(75)) // resizes the image to these dimensions (in pixel)
+                    .centerCrop()
+                    .into(holder.galleryImage);
             holder.galleryImageCard.setElevation(1);
 
         } else {
