@@ -15,17 +15,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
-import com.google.photos.types.proto.Album;
 
 import java.util.List;
 
 public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerViewAdapterAlbums.ViewHolder> {
 
-    private static List<com.google.photos.types.proto.Album> mData;
+    private static List<CustomAlbum> mData;
     private LayoutInflater mInflater;
     private ItemClickListener mClickListener;
 
-    public RecyclerViewAdapterAlbums(Context context, List<com.google.photos.types.proto.Album> albums) {
+    public RecyclerViewAdapterAlbums(Context context, List<CustomAlbum> albums) {
         this.mInflater = LayoutInflater.from(context);
         mData = albums;
     }
@@ -46,7 +45,11 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull RecyclerViewAdapterAlbums.ViewHolder holder, int position) {
-        String url = mData.get(position).getCoverPhotoBaseUrl() + "=w" + dpToPx(150) + "-h" + dpToPx(100) + "-c";
+        CustomAlbum a = mData.get(position);
+        String url = a.getCoverPhotoBaseUrl() +
+                ((a.getId() == "fullLibrary") ?
+                        "?height=" + dpToPx(100) + "&width=" + dpToPx(150)
+                        : "=w" + dpToPx(150) + "-h" + dpToPx(100) + "-c");
         Glide.with(holder.albumImage.getContext()).load(url).into(holder.albumImage);
         if (mData.get(position).getTitle().length() > 26) {
             holder.albumName.setText(mData.get(position).getTitle().substring(0, 25) + "...");
@@ -100,7 +103,7 @@ public class RecyclerViewAdapterAlbums extends RecyclerView.Adapter<RecyclerView
     }
 
     // convenience method for getting data at click position
-    Album getItem(int id) {
+    CustomAlbum getItem(int id) {
         return mData.get(id);
     }
 

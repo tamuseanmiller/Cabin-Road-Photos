@@ -39,9 +39,10 @@ import static com.rebeccamcfadden.cabinroadphotos.MainActivity.photosLibraryClie
 
 public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums.ItemClickListener {
 
-    private AtomicReference<List<Album>> albums;
+    private AtomicReference<List<CustomAlbum>> albums;
     private RecyclerViewAdapterAlbums albumAdapter;
     private RecyclerView albumRecycler;
+    private CustomAlbum fullLibrary;
 
     public AlbumFragment() {
 
@@ -53,6 +54,9 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
 
         // Inflate the layout for this fragment
         View mView = inflater.inflate(R.layout.fragment_album, container, false);
+
+        // Full Library dummy album
+        fullLibrary = new CustomAlbum("fullLibrary", "Camera Roll");
 
         Thread thread = new Thread(() -> {
             SwipeRefreshLayout refreshAlbum = mView.findViewById(R.id.refresh_album);
@@ -177,17 +181,17 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
     }
 
     // Adds both your albums and albums shared with you
-    private List<Album> getAllAlbums() {
-        List<Album> preAlbum = new ArrayList<>();
+    private List<CustomAlbum> getAllAlbums() {
+        List<CustomAlbum> preAlbum = new ArrayList<>();
         Set<String> IDs = new HashSet<>();
         for (Album album : photosLibraryClient.listAlbums().iterateAll()) {
             if (!album.getTitle().isEmpty()) {
-                preAlbum.add(album);
+                preAlbum.add(new CustomAlbum(album));
                 IDs.add(album.getId());
             }
         }
         for (Album album : photosLibraryClient.listSharedAlbums().iterateAll()) {
-            if (!IDs.contains(album.getId()) && !album.getTitle().isEmpty()) preAlbum.add(album);
+            if (!IDs.contains(album.getId()) && !album.getTitle().isEmpty()) preAlbum.add(new CustomAlbum(album));
         }
         Collections.sort(preAlbum, (album1, album2) -> {
             if (album1.getTitle().isEmpty() && album2.getTitle().isEmpty()) {
@@ -199,11 +203,12 @@ public class AlbumFragment extends Fragment implements RecyclerViewAdapterAlbums
             }
             return album1.getTitle().compareTo(album2.getTitle());
         });
+        preAlbum.add(0, fullLibrary);
         return preAlbum;
     }
 
     private void refreshAlbums() {
-        ArrayList<Album> temp = new ArrayList<>(getAllAlbums());
+        ArrayList<CustomAlbum> temp = new ArrayList<>(getAllAlbums());
         albums.get().clear();
         albums.get().addAll(temp);
         temp.clear();

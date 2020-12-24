@@ -214,12 +214,16 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                 mContext.runOnUiThread(() -> refreshGallery.setRefreshing(true));
 
             // Get Media Items from Album and add to String List
-            images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            if (albumID == "fullLibrary") {
+                images = new AtomicReference<>(photosLibraryClient.listMediaItems().iterateAll());
+            } else {
+                images = new AtomicReference<>(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            }
             finalImages = new AtomicReference<>(new ArrayList<>());
             finalImagesRaw = new AtomicReference<>(new ArrayList<>());
 
             // Add upload button if album is writeable
-            isWriteable = photosLibraryClient.getAlbum(albumID).getIsWriteable();
+            isWriteable = (albumID == "fullLibrary") ? false : photosLibraryClient.getAlbum(albumID).getIsWriteable();
             if (isWriteable) {
                 finalImages.get().add("ADDIMAGEPICTURE");
             }
@@ -294,7 +298,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         AppCompatImageButton downloadButton = overlayView.findViewById(R.id.download_button);
         MediaItem video = finalImagesRaw.get().get(currentPosition);
         if (video.getMediaMetadata().hasVideo()) {
-            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            String albumDir = videoSaveDir.getAbsolutePath();
             File file = new File(albumDir + "/" + video.getId() + ".mp4");
             if (!file.exists()) {
                 downloadButton.setImageResource(R.drawable.cloud_download);
@@ -475,7 +479,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         // If download button is clicked
         downloadButton.setOnClickListener(v -> {
             MediaItem video = finalImagesRaw.get().get(position);
-            String albumDir = videoSaveDir.getAbsolutePath() + "/" + albumID;
+            String albumDir = videoSaveDir.getAbsolutePath();
             File file = new File(albumDir + "/" + video.getId() + ".mp4");
             if (!videoDownloaded) {
                 // Create Dialog
@@ -542,7 +546,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
             MediaItem m = finalImagesRaw.get().get(isWriteable ? stfalconImageViewer.currentPosition() - 1 : stfalconImageViewer.currentPosition());
             if (m.getMediaMetadata().hasVideo()) {
                 Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
-                File fileLoc = new File(videoSaveDir + "/" + albumID + "/" + m.getId() + ".mp4");
+                File fileLoc = new File(videoSaveDir + "/" + m.getId() + ".mp4");
                 Log.d("videoPlayback", "Playing file: " + fileLoc.getAbsolutePath());
                 boolean isDownloaded = fileLoc.exists();
                 Uri data = isDownloaded ? Uri.parse(fileLoc.getAbsolutePath()) : Uri.parse(m.getBaseUrl() + "=dv");
@@ -589,11 +593,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     // When refresh is called
     private void onRefresh() {
-        refreshGallery.setRefreshing(true);
+        mContext.runOnUiThread(() -> refreshGallery.setRefreshing(true));
         Thread t3 = new Thread(() -> {
 
             // Grab images in album
-            images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            if (albumID == "fullLibrary") {
+                images.set(photosLibraryClient.listMediaItems().iterateAll());
+            } else {
+                images.set(photosLibraryClient.searchMediaItems(albumID).iterateAll());
+            }
             finalImages.get().clear();
 
             // Add all URLS to temp for finalImages
