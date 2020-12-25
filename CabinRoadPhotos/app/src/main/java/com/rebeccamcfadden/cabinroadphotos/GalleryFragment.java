@@ -281,9 +281,14 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
                     // Check if slideshow is happening
                     if (stfalconImageViewer != null) {
-                        startSlideshow(stfalconImageViewer.currentPosition());
+                        mContext.runOnUiThread(() -> {
+                            synchronized(stfalconImageViewer){
+                                stfalconImageViewer.updateImages(isWriteable ? finalImages.get().subList(1,
+                                        finalImages.get().size()) : finalImages.get());
+                                stfalconImageViewer.notify();
+                            }
+                        });
                     }
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -340,13 +345,17 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
 
     private void incrementSlideshow(StfalconImageViewer stfalconImageViewer) {
         if (mContext != null && stfalconImageViewer != null) {
-            if (finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
+            if (finalImages.get().size() > 1 && finalImages.get().size() - 1 != stfalconImageViewer.currentPosition()) {
                 mContext.runOnUiThread(() -> {
-                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+                    synchronized (stfalconImageViewer) {
+                        stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() + 1);
+                    }
                 });
             } else {
                 mContext.runOnUiThread(() -> {
-                    stfalconImageViewer.setCurrentPosition(0);
+                    synchronized (stfalconImageViewer) {
+                        stfalconImageViewer.setCurrentPosition(0);
+                    }
                 });
             }
         } else {
@@ -358,11 +367,15 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
         if (mContext != null && stfalconImageViewer != null) {
             if (stfalconImageViewer.currentPosition() > 0) {
                 mContext.runOnUiThread(() -> {
-                    stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+                    synchronized (stfalconImageViewer) {
+                        stfalconImageViewer.setCurrentPosition(stfalconImageViewer.currentPosition() - 1);
+                    }
                 });
             } else {
                 mContext.runOnUiThread(() -> {
-                    stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1);
+                    synchronized (stfalconImageViewer) {
+                        stfalconImageViewer.setCurrentPosition(finalImages.get().size() - 1);
+                    }
                 });
             }
         } else {
@@ -587,7 +600,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     slideshowTimer.cancel();
                     slideshowTimer = null;
                 })
-                .withStartPosition(isWriteable ? position - 1 : position)
+                .withStartPosition((isWriteable && position > 0) ? position - 1 : position)
                 .withImageChangeListener(new OnImageChangeListener() {
                     @Override
                     public void onImageChange(int position) {
@@ -595,7 +608,7 @@ public class GalleryFragment extends Fragment implements RecyclerViewAdapterGall
                     }
                 })
                 .show();
-        setIcons(overlayView, isWriteable ? position - 1 : position);
+        setIcons(overlayView, position);
         slideshowTimer = new Timer();
         slideshowTimer.scheduleAtFixedRate(new TimerTask() {
                                                @Override
